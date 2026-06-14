@@ -1,0 +1,833 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-06-08",
+  "entries": [
+    {
+      "category": "eSIM activation",
+      "carrier": "verizon",
+      "tier": 0,
+      "title": "Verizon eSIM Activation Steps",
+      "steps": [
+        "Go to Settings > Cellular (or Mobile Data) on your device.",
+        "Tap 'Add Cellular Plan' or 'Add eSIM'.",
+        "Select 'Use QR Code' — scan the QR code from your Verizon confirmation email, or enter the activation code manually.",
+        "Follow on-screen prompts. When asked, choose 'Verizon' as your carrier plan.",
+        "Restart your device after activation completes.",
+        "If activation fails with error EE002: call *611 from another device — your account may need eSIM unlock enabled by an agent."
+      ],
+      "escalation_triggers": ["EE002 error after restart", "account shows no eSIM eligibility", "device IMEI not recognised"],
+      "expected_resolution_minutes": 10,
+      "platform_responses": {
+        "x": "To activate your Verizon eSIM: Settings > Cellular > Add eSIM > scan QR from your confirmation email > restart. Error EE002? Call *611 — your account may need eSIM unlock. ^PG",
+        "reddit": "**Verizon eSIM Activation**\n\n1. Settings > Cellular > Add Cellular Plan\n2. Scan the QR code from your Verizon confirmation email (or enter the activation code manually)\n3. Follow prompts, select Verizon plan, restart device\n\nIf you hit error **EE002** after restarting, your account needs eSIM unlock enabled — call *611 or visit a Verizon store. Usually resolved in under 10 minutes.",
+        "review": "Thank you for reaching out. To activate your Verizon eSIM, go to Settings > Cellular > Add Cellular Plan and scan the QR code from your confirmation email. After completing the on-screen steps, restart your device. If you receive error EE002, please call *611 — your account may require eSIM unlock activation by our team. We apologize for the inconvenience."
+      }
+    },
+    {
+      "category": "eSIM activation",
+      "carrier": "tmobile",
+      "tier": 0,
+      "title": "T-Mobile eSIM Activation Steps",
+      "steps": [
+        "Open the T-Mobile app or go to t-mobile.com/activate.",
+        "On your device: Settings > Cellular > Add Cellular Plan.",
+        "Enter the activation code provided in your T-Mobile order confirmation.",
+        "Follow the prompts to complete setup. Choose 'T-Mobile' as your primary line if prompted.",
+        "Restart your device.",
+        "If you see 'SIM Not Supported': ensure your device is unlocked and compatible with T-Mobile eSIM (check t-mobile.com/esim-compatible-devices)."
+      ],
+      "escalation_triggers": ["SIM Not Supported on compatible device", "activation code already used", "account mismatch error"],
+      "expected_resolution_minutes": 10,
+      "platform_responses": {
+        "x": "For T-Mobile eSIM: Settings > Cellular > Add Cellular Plan > enter your activation code from your order email > restart. 'SIM Not Supported'? Check your device is unlocked at t-mobile.com/esim-compatible-devices ^PG",
+        "reddit": "**T-Mobile eSIM Activation**\n\n1. Go to [t-mobile.com/activate](https://t-mobile.com/activate) or open the T-Mobile app\n2. On your phone: Settings > Cellular > Add Cellular Plan\n3. Enter the activation code from your order confirmation email\n4. Restart your device after setup completes\n\n'SIM Not Supported' error means your device may be carrier-locked or not eSIM-compatible. Check the full list at t-mobile.com/esim-compatible-devices.",
+        "review": "We're sorry to hear about the eSIM activation difficulty. Please go to Settings > Cellular > Add Cellular Plan and enter the activation code from your order confirmation. After restarting, your eSIM should be active. If you see 'SIM Not Supported,' please verify your device compatibility at t-mobile.com/esim-compatible-devices or contact our support team."
+      }
+    },
+    {
+      "category": "eSIM activation",
+      "carrier": "att",
+      "tier": 0,
+      "title": "AT&T eSIM Activation Steps",
+      "steps": [
+        "Visit att.com/activateyourdevice or call 866-895-1099.",
+        "On your device: Settings > Cellular > Add Cellular Plan.",
+        "Scan the QR code from your AT&T activation email, or enter the 32-digit activation code.",
+        "Select AT&T as your carrier when prompted.",
+        "Restart your device after the profile installs.",
+        "Allow up to 15 minutes for full network registration after restart."
+      ],
+      "escalation_triggers": ["error code 2012", "account shows no eSIM feature", "device IMEI blocked"],
+      "expected_resolution_minutes": 15,
+      "platform_responses": {
+        "x": "AT&T eSIM: Settings > Cellular > Add Cellular Plan > scan QR from your activation email or enter your 32-digit code > restart. Allow 15 min for full network registration. Still stuck? Visit att.com/activateyourdevice ^PG",
+        "reddit": "**AT&T eSIM Activation**\n\n1. Visit [att.com/activateyourdevice](https://att.com/activateyourdevice)\n2. Settings > Cellular > Add Cellular Plan\n3. Scan the QR code from your activation email (or enter the 32-digit code manually)\n4. Restart and wait up to 15 minutes for full network registration\n\nError code 2012 or account shows no eSIM feature? That usually requires an agent to enable it — call 866-895-1099.",
+        "review": "Thank you for contacting us. To activate your AT&T eSIM, please visit att.com/activateyourdevice and follow the prompts, or go to Settings > Cellular > Add Cellular Plan and scan your QR code. Allow up to 15 minutes after restarting for full activation. We apologize for any frustration."
+      }
+    },
+    {
+      "category": "Order status",
+      "carrier": "verizon",
+      "tier": 0,
+      "title": "Verizon Order Status Lookup",
+      "steps": [
+        "Visit verizon.com/orderstatus or open the My Verizon app.",
+        "Sign in with your Verizon account credentials.",
+        "Under 'Orders', locate your recent order by date or order number.",
+        "If your order shows 'Processing' for more than 3 business days, call *611.",
+        "For device shipment tracking, use the UPS or FedEx tracking number emailed to you at the time of shipment."
+      ],
+      "escalation_triggers": ["order stuck in processing >5 days", "order shows cancelled but not refunded", "wrong device shipped"],
+      "expected_resolution_minutes": 5,
+      "platform_responses": {
+        "x": "Track your Verizon order at verizon.com/orderstatus or in the My Verizon app. Shipment tracking# was emailed when your order shipped. Processing >3 days? Call *611 for an update. ^PG",
+        "reddit": "To check your Verizon order status:\n- Visit **verizon.com/orderstatus** or open the **My Verizon app**\n- Your shipment tracking number (UPS/FedEx) was sent via email when the order shipped\n\nIf it's been stuck in 'Processing' for more than 3 business days, call **\\*611** — agents can see the internal fulfillment queue.",
+        "review": "We're sorry for the uncertainty about your order. You can check your order status at verizon.com/orderstatus or in the My Verizon app. If your order has been processing for more than 3 business days, please call *611 and an agent will be able to provide an update."
+      }
+    },
+    {
+      "category": "Order status",
+      "carrier": "tmobile",
+      "tier": 0,
+      "title": "T-Mobile Order Status Lookup",
+      "steps": [
+        "Go to t-mobile.com/my-t-mobile or open the T-Mobile app.",
+        "Sign in and navigate to 'Orders'.",
+        "Locate your order — estimated delivery dates and tracking info appear once the item ships.",
+        "T-Mobile ships via FedEx; tracking number is also emailed at shipment.",
+        "Orders typically process within 1-2 business days."
+      ],
+      "escalation_triggers": ["order missing for >7 days", "order shows delivered but not received", "trade-in credit not applied"],
+      "expected_resolution_minutes": 5,
+      "platform_responses": {
+        "x": "Check your T-Mobile order at t-mobile.com/my-t-mobile or in the app under 'Orders'. FedEx tracking# is emailed at shipment. Questions? Try 611 from your T-Mobile phone. ^PG",
+        "reddit": "T-Mobile order tracking:\n- Log into **t-mobile.com/my-t-mobile** or the T-Mobile app\n- Navigate to **Orders** for status and FedEx tracking\n\nTypically ships in 1-2 business days. If it shows delivered but you haven't received it, file a claim at 611 — FedEx investigates non-delivery claims within 5 business days.",
+        "review": "Thank you for your patience. You can track your T-Mobile order at t-mobile.com/my-t-mobile or in the T-Mobile app under Orders. Your FedEx tracking number was emailed when your order shipped. If you need further assistance, please call 611."
+      }
+    },
+    {
+      "category": "Order status",
+      "carrier": "att",
+      "tier": 0,
+      "title": "AT&T Order Status Lookup",
+      "steps": [
+        "Visit att.com/orderdetails or open the myAT&T app.",
+        "Sign in and go to 'Orders'.",
+        "AT&T ships via UPS — tracking number is emailed once the order ships.",
+        "Allow 1-2 business days for processing before a tracking number is generated.",
+        "For same-day store pickup orders, check your confirmation email for the ready notification."
+      ],
+      "escalation_triggers": ["order delayed >7 business days", "duplicate charge on order", "trade-in device not received by AT&T"],
+      "expected_resolution_minutes": 5,
+      "platform_responses": {
+        "x": "Track your AT&T order at att.com/orderdetails or in the myAT&T app. UPS tracking# is emailed when your order ships (1-2 days processing). Need help? Call 800-331-0500. ^PG",
+        "reddit": "For AT&T order status:\n- Visit **att.com/orderdetails** or the **myAT&T app** > Orders\n- UPS tracking is emailed once your order ships (allow 1-2 business days for processing)\n\nOrder delayed beyond 7 days? Call **800-331-0500** — the fulfillment team can pull the internal status.",
+        "review": "We apologize for any concern about your order. Please check your AT&T order status at att.com/orderdetails or in the myAT&T app. Your UPS tracking number will be emailed when your item ships. Please contact us at 800-331-0500 if you need further assistance."
+      }
+    },
+    {
+      "category": "App not working",
+      "carrier": "verizon",
+      "tier": 0,
+      "title": "My Verizon App Troubleshooting",
+      "steps": [
+        "Force-close the My Verizon app and reopen.",
+        "Check for app updates in the App Store or Google Play.",
+        "If the issue persists: Settings > Apps > My Verizon > Clear Cache (Android) or delete and reinstall (iOS).",
+        "Ensure your Verizon account credentials are current (try logging in at verizon.com).",
+        "Check verizonwireless.com/support for known app outages.",
+        "If the app shows 'Service Unavailable': this is typically a backend maintenance window (usually <2 hours)."
+      ],
+      "escalation_triggers": ["app crash loop after reinstall", "login fails with valid credentials", "app outage lasting >4 hours"],
+      "expected_resolution_minutes": 10,
+      "platform_responses": {
+        "x": "My Verizon app fix: force-close > update in App Store/Play Store > clear cache (Android) or reinstall (iOS). 'Service Unavailable'? Usually a brief maintenance window. Check verizon.com/support for status. ^PG",
+        "reddit": "**My Verizon app not working — steps to fix:**\n\n1. Force-close and reopen the app\n2. Update via App Store / Google Play\n3. Android: Settings > Apps > My Verizon > Clear Cache. iOS: delete and reinstall\n4. Try logging in at verizon.com to verify your credentials still work\n\n'Service Unavailable' errors are usually maintenance windows under 2 hours. Check verizon.com/support for current outage info.",
+        "review": "We're sorry you're having trouble with the My Verizon app. Please try force-closing the app, checking for updates, and clearing the cache (Android) or reinstalling (iOS). If you continue to experience issues, please visit verizon.com/support or call *611."
+      }
+    },
+    {
+      "category": "App not working",
+      "carrier": "tmobile",
+      "tier": 0,
+      "title": "T-Mobile App Troubleshooting",
+      "steps": [
+        "Force-close the T-Mobile app and reopen.",
+        "Update the app via App Store or Google Play.",
+        "Android: Settings > Apps > T-Mobile > Clear Cache and Clear Data. iOS: Delete and reinstall.",
+        "Verify your T-Mobile ID credentials at t-mobile.com.",
+        "Check T-Mobile's system status at t-mobile.com/coverage/status.",
+        "Known issue: some users see 'Authentication Error' after app updates — reinstall resolves this in 95% of cases."
+      ],
+      "escalation_triggers": ["T-Mobile ID locked out", "2FA loop not resolving", "app crash on launch after reinstall"],
+      "expected_resolution_minutes": 10,
+      "platform_responses": {
+        "x": "T-Mobile app issues: update > clear cache (Android) or reinstall (iOS) > verify your T-Mobile ID at t-mobile.com. 'Authentication Error' after an update? Reinstall fixes it for most users. ^PG",
+        "reddit": "**T-Mobile app troubleshooting:**\n\n1. Update via App Store / Google Play\n2. Android: Settings > Apps > T-Mobile > Clear Cache + Clear Data. iOS: delete and reinstall\n3. Confirm your T-Mobile ID works at t-mobile.com\n4. Check system status at t-mobile.com/coverage/status\n\n'Authentication Error' after a recent update is a known issue — reinstalling resolves it for ~95% of affected users.",
+        "review": "We apologize for the app difficulty. Please update the T-Mobile app, then clear cache (Android) or reinstall (iOS), and verify your T-Mobile ID at t-mobile.com. If the issue persists, please call 611 and our team will assist."
+      }
+    },
+    {
+      "category": "App not working",
+      "carrier": "att",
+      "tier": 0,
+      "title": "myAT&T App Troubleshooting",
+      "steps": [
+        "Force-close the myAT&T app and reopen.",
+        "Update the app via App Store or Google Play.",
+        "Android: Settings > Apps > myAT&T > Storage > Clear Cache. iOS: delete and reinstall.",
+        "Verify your AT&T account credentials at att.com.",
+        "Check AT&T service status at att.com/outages.",
+        "If you see 'Error 403': your session has expired — log out fully and log back in."
+      ],
+      "escalation_triggers": ["account locked after repeated login attempts", "Error 403 persists after re-login", "app missing billing section"],
+      "expected_resolution_minutes": 10,
+      "platform_responses": {
+        "x": "myAT&T app trouble: update > clear cache (Android) or reinstall (iOS) > verify login at att.com. Error 403? Log out completely and back in — session expired. Check att.com/outages for status. ^PG",
+        "reddit": "**myAT&T app not working — steps:**\n\n1. Force-close and update the app\n2. Android: Settings > Apps > myAT&T > Storage > Clear Cache. iOS: delete and reinstall\n3. Check your credentials at att.com\n4. Error 403 = expired session — fully log out and log back in\n5. System status: att.com/outages",
+        "review": "We're sorry for the inconvenience with the myAT&T app. Please update the app and clear the cache (Android) or reinstall (iOS). If you're seeing Error 403, please log out completely and log back in. For further help, please call 800-331-0500."
+      }
+    },
+    {
+      "category": "Trade-in status",
+      "carrier": "verizon",
+      "tier": 0,
+      "title": "Verizon Trade-In Status Check",
+      "steps": [
+        "Visit verizon.com/trade-in/status and enter your order number and ZIP code.",
+        "Alternatively: My Verizon app > Account > Orders > Trade-In.",
+        "Allow 7-10 business days after Verizon receives your device for the credit to post.",
+        "If your device was received but credit is not posted after 14 days: call *611 with your trade-in order number.",
+        "Condition disputes (received in worse condition than assessed): you have 30 days to dispute — call *611."
+      ],
+      "escalation_triggers": ["device received but credit not posted after 14 days", "condition downgraded without notice", "device lost in transit"],
+      "expected_resolution_minutes": 5,
+      "platform_responses": {
+        "x": "Check your Verizon trade-in at verizon.com/trade-in/status or My Verizon app > Orders > Trade-In. Allow 7-10 business days after receipt for credit to post. Credit not posted after 14 days? Call *611. ^PG",
+        "reddit": "**Verizon trade-in status:**\n\n- Check at **verizon.com/trade-in/status** (need order number + ZIP)\n- Or: My Verizon app > Account > Orders > Trade-In\n\nCredit posts within **7-10 business days** of Verizon receiving the device. Not posted after 14 days? Call **\\*611** with your trade-in order number — they can see the processing queue.\n\nCondition dispute? You have 30 days from the credit adjustment notice.",
+        "review": "Thank you for inquiring about your trade-in. You can check the status at verizon.com/trade-in/status using your order number and ZIP code. Credit typically posts within 7-10 business days of us receiving your device. If credit has not posted after 14 days, please call *611."
+      }
+    },
+    {
+      "category": "Trade-in status",
+      "carrier": "tmobile",
+      "tier": 0,
+      "title": "T-Mobile Trade-In Status Check",
+      "steps": [
+        "Visit t-mobile.com/trade-in-status and enter your trade-in confirmation number.",
+        "Or: T-Mobile app > Account > Trade-In History.",
+        "Once T-Mobile receives your device, allow 5-7 business days for credit.",
+        "Instant trade-in credits apply at purchase — check your order confirmation.",
+        "Promotional trade-in credits may take 1-2 bill cycles to appear.",
+        "Device condition issues: contact T-Mobile within 30 days via 611."
+      ],
+      "escalation_triggers": ["promo credit missing after 2 bill cycles", "device condition disputed", "device lost in return shipping"],
+      "expected_resolution_minutes": 5,
+      "platform_responses": {
+        "x": "T-Mobile trade-in status: t-mobile.com/trade-in-status or T-Mobile app > Account > Trade-In History. Allow 5-7 days after receipt for credit. Promo credits can take 1-2 bill cycles. Questions? Call 611. ^PG",
+        "reddit": "**T-Mobile trade-in tracking:**\n\n- Check at **t-mobile.com/trade-in-status** with your confirmation number\n- T-Mobile app: Account > Trade-In History\n\nStandard credit: 5-7 business days after device receipt. **Promotional credits** take 1-2 billing cycles — this is normal and noted in your promo terms.\n\nCondition dispute or missing promo after 2 cycles? Call **611**.",
+        "review": "We're sorry for any uncertainty about your trade-in credit. Please check your trade-in status at t-mobile.com/trade-in-status. Standard credits post within 5-7 business days; promotional credits may take 1-2 billing cycles. If you have further questions, please call 611."
+      }
+    },
+    {
+      "category": "Trade-in status",
+      "carrier": "att",
+      "tier": 0,
+      "title": "AT&T Trade-In Status Check",
+      "steps": [
+        "Visit att.com/tradein/status or the myAT&T app > Transactions > Trade-In.",
+        "Credits typically apply within 3 billing cycles of AT&T receiving your device.",
+        "You'll receive a confirmation email when your device is received and assessed.",
+        "If you haven't received an email within 30 days of mailing: call 800-331-0500.",
+        "Keep your shipping receipt until the credit appears on your bill."
+      ],
+      "escalation_triggers": ["no receipt email after 30 days", "credit not applied after 3 bill cycles", "condition downgraded without email notice"],
+      "expected_resolution_minutes": 5,
+      "platform_responses": {
+        "x": "AT&T trade-in: check at att.com/tradein/status or myAT&T app > Transactions. Credits apply within 3 billing cycles. No email within 30 days of mailing? Call 800-331-0500. ^PG",
+        "reddit": "**AT&T trade-in status:**\n\n- Check at **att.com/tradein/status** or myAT&T app > Transactions > Trade-In\n- Credits apply within **3 billing cycles** of AT&T receiving your device\n- You'll get an email when your device is received and graded\n\nNo receipt email after 30 days? Call **800-331-0500** with your shipping tracking number.",
+        "review": "Thank you for following up on your trade-in. Please check the status at att.com/tradein/status or in the myAT&T app. Credits apply within 3 billing cycles of receiving your device. If you haven't received a confirmation email within 30 days of shipping, please call 800-331-0500."
+      }
+    },
+    {
+      "category": "Bill explanation",
+      "carrier": "verizon",
+      "tier": 1,
+      "title": "Verizon Bill Explanation",
+      "steps": [
+        "View your itemised bill at verizon.com/mybill or My Verizon app > Billing > Bill Detail.",
+        "First bill is often higher than expected: includes partial month charges from activation date plus first full month.",
+        "Look for one-time charges: device payments, activation fees ($35), or equipment purchases.",
+        "Check for international roaming charges if you traveled — go to Account > Usage.",
+        "Premium services (Disney+, Apple One bundles) are listed separately under 'Third-Party Charges'.",
+        "Auto-pay discount ($10-20/line) may be missing if payment method was not set up — check Account > Auto Pay."
+      ],
+      "escalation_triggers": ["charge present that customer never authorised", "double-billed for same period", "auto-pay discount not applied for 2+ cycles"],
+      "expected_resolution_minutes": 15,
+      "platform_responses": {
+        "x": "For Verizon bill details: verizon.com/mybill or My Verizon app > Billing > Bill Detail. First bills are often higher (partial month + first full month + any activation fees). Unexpected charge? Check Account > Usage for data/roaming. ^PG",
+        "reddit": "**Verizon bill higher than expected — common causes:**\n\n1. **First bill**: Includes partial month (activation date to cycle end) + first full month\n2. **Activation fee**: $35/line (one-time)\n3. **Roaming**: Check Account > Usage if you travelled\n4. **Missing auto-pay discount**: Check Account > Auto Pay — $10-20/line off if enrolled\n5. **Third-party charges**: Premium add-ons listed separately\n\nView full itemised bill at **verizon.com/mybill**. If you still see an unexplained charge, that needs a billing agent — call **\\*611**.",
+        "review": "We understand bill concerns can be stressful. Your itemised bill is available at verizon.com/mybill or in the My Verizon app under Billing > Bill Detail. First bills are commonly higher because they include a partial month plus a full month charge. If you see a charge you don't recognise, please call *611 and a billing specialist will review it."
+      }
+    },
+    {
+      "category": "Bill explanation",
+      "carrier": "tmobile",
+      "tier": 1,
+      "title": "T-Mobile Bill Explanation",
+      "steps": [
+        "View your bill at t-mobile.com/my-t-mobile or T-Mobile app > Billing.",
+        "First bill includes a partial month from activation plus a full month in advance.",
+        "T-Mobile charges in advance — what you pay now covers next month.",
+        "AutoPay discount ($5/line) requires a qualifying payment method — check Account > AutoPay.",
+        "Taxes and fees vary by state and city — T-Mobile shows them in the 'Government Taxes & Fees' section.",
+        "International Day Passes appear as one-time charges per day used."
+      ],
+      "escalation_triggers": ["unauthorised third-party charge", "promo plan rate not honoured", "autopay discount missing 2+ months"],
+      "expected_resolution_minutes": 15,
+      "platform_responses": {
+        "x": "T-Mobile bills in advance — what you pay now covers next month. First bill includes partial month + advance. AutoPay discount ($5/line) missing? Check Account > AutoPay setup. Details at t-mobile.com/my-t-mobile. ^PG",
+        "reddit": "**T-Mobile bill questions — key points:**\n\n- **Billing in advance**: T-Mobile charges for the *upcoming* month, not the current one\n- **First bill**: Partial month (activation to cycle start) + first full month advance charge = looks high, normal\n- **AutoPay discount**: $5/line off with qualifying payment method. Check Account > AutoPay\n- **Taxes vary**: Listed under 'Government Taxes & Fees' by state/city\n\nFull bill breakdown at **t-mobile.com/my-t-mobile** > Billing. Still confused? 611 from your T-Mobile phone.",
+        "review": "We're sorry for the billing confusion. T-Mobile bills one month in advance, which is why your first bill may look higher — it includes a partial month plus the full upcoming month. Your itemised bill is available at t-mobile.com/my-t-mobile. If you have a specific charge you don't recognise, please call 611."
+      }
+    },
+    {
+      "category": "Bill explanation",
+      "carrier": "att",
+      "tier": 1,
+      "title": "AT&T Bill Explanation",
+      "steps": [
+        "View your bill at att.com/mybill or myAT&T app > Billing > Current Bill.",
+        "AT&T bills one month in advance for service charges.",
+        "First bill: partial month from activation + first month in advance + any device or activation fees.",
+        "Paperless billing discount ($10/month) requires paperless enrollment — check Account > Paperless Billing.",
+        "Look for 'AT&T Next' installment charges if you financed a device — listed under Equipment.",
+        "Check att.com/international for roaming charges if applicable."
+      ],
+      "escalation_triggers": ["AT&T Next payment dispute", "unauthorised premium content charge", "paperless discount not applied 2+ months"],
+      "expected_resolution_minutes": 15,
+      "platform_responses": {
+        "x": "AT&T bills 1 month in advance. First bill is higher: partial month + advance + activation fees. Check att.com/mybill for itemised detail. Paperless discount ($10/mo) — verify enrollment in Account settings. ^PG",
+        "reddit": "**AT&T bill higher than expected:**\n\n1. **Advance billing**: AT&T charges for the upcoming month\n2. **First bill**: Activation fees ($30) + partial month + advance month = double charge appearance\n3. **Paperless discount**: $10/month off if enrolled — check Account > Paperless Billing\n4. **AT&T Next**: Device installment appears separately under Equipment\n5. **Roaming**: Check att.com/international if you travelled\n\nFull bill at **att.com/mybill**. Charge you don't recognise? That requires a billing agent — call **800-331-0500**.",
+        "review": "Thank you for your billing inquiry. AT&T bills one month in advance, which typically makes the first bill appear higher. Full itemised details are available at att.com/mybill or in the myAT&T app. If you see a charge you don't recognise, please call 800-331-0500 for a billing review."
+      }
+    },
+    {
+      "category": "Network signal (individual)",
+      "carrier": "verizon",
+      "tier": 1,
+      "title": "Verizon Individual Signal Troubleshooting",
+      "steps": [
+        "Toggle Airplane Mode on for 30 seconds, then off — forces a fresh network registration.",
+        "Restart your device completely (not sleep/wake).",
+        "Check Verizon's coverage map at verizon.com/coverage — verify your area shows LTE/5G.",
+        "Settings > Cellular > Network Selection > set to Automatic (if on Manual).",
+        "Remove SIM, gently clean contacts, reinsert firmly.",
+        "Check for carrier settings update: Settings > General > About (iOS) — update if prompted.",
+        "If issue is location-specific: report the coverage gap at verizon.com/coverage/report.",
+        "Factory reset network settings (does not delete data): Settings > General > Transfer/Reset > Reset > Reset Network Settings."
+      ],
+      "escalation_triggers": ["outage confirmed in the area", "signal issue started after account change", "SIM replaced but issue persists"],
+      "expected_resolution_minutes": 20,
+      "platform_responses": {
+        "x": "Verizon signal drops: try Airplane Mode toggle > full restart > check verizon.com/coverage for your area. Manual network selection? Switch to Automatic in Settings > Cellular. Persistent? Report gap at verizon.com/coverage/report ^PG",
+        "reddit": "**Verizon signal troubleshooting:**\n\n1. Airplane Mode on 30s → off (forces re-registration)\n2. Full device restart\n3. Check **verizon.com/coverage** — confirm LTE/5G shows for your exact location\n4. Settings > Cellular > Network Selection → Automatic\n5. Remove and reseat SIM card\n6. iOS: Settings > General > About — accept carrier settings update if prompted\n7. Last resort: Reset Network Settings (Settings > General > Reset)\n\nPersistent gap in a specific location? Report it at **verizon.com/coverage/report**.",
+        "review": "We're sorry to hear about your signal issues. Please try toggling Airplane Mode on for 30 seconds then off, and perform a full device restart. You can also check your coverage at verizon.com/coverage. If the issue is location-specific, please report it at verizon.com/coverage/report and our network team will investigate."
+      }
+    },
+    {
+      "category": "Network signal (individual)",
+      "carrier": "tmobile",
+      "tier": 1,
+      "title": "T-Mobile Individual Signal Troubleshooting",
+      "steps": [
+        "Toggle Airplane Mode on for 30 seconds, then off.",
+        "Restart your device fully.",
+        "Check T-Mobile's coverage map at t-mobile.com/coverage.",
+        "Verify your SIM is seated correctly — remove and reinsert.",
+        "Settings > Cellular > Preferred Network Type — try LTE if 5G shows issues.",
+        "Check for T-Mobile carrier settings update (iOS: Settings > General > About).",
+        "Enable Wi-Fi Calling as a workaround: Settings > Cellular > Wi-Fi Calling — T-Mobile supports this on all plans.",
+        "Report persistent gaps: t-mobile.com/coverage/report."
+      ],
+      "escalation_triggers": ["area-wide outage", "signal degraded after plan change", "device IMEI not provisioned correctly"],
+      "expected_resolution_minutes": 20,
+      "platform_responses": {
+        "x": "T-Mobile signal issues: Airplane Mode toggle > restart > check t-mobile.com/coverage. Try enabling Wi-Fi Calling (Settings > Cellular > Wi-Fi Calling) as a workaround while we investigate. ^PG",
+        "reddit": "**T-Mobile signal troubleshooting:**\n\n1. Airplane Mode on 30s → off\n2. Full restart\n3. Check **t-mobile.com/coverage** for your area\n4. Try forcing **LTE** instead of 5G Auto: Settings > Cellular > Preferred Network Type\n5. Enable **Wi-Fi Calling** as a workaround: Settings > Cellular > Wi-Fi Calling (free on all T-Mobile plans)\n6. Persistent gap? Report at **t-mobile.com/coverage/report**",
+        "review": "We apologize for the signal difficulties. Please try toggling Airplane Mode and restarting your device. Enabling Wi-Fi Calling can help in low-signal areas — it's available on all T-Mobile plans at no extra cost. You can check coverage at t-mobile.com/coverage."
+      }
+    },
+    {
+      "category": "Network signal (individual)",
+      "carrier": "att",
+      "tier": 1,
+      "title": "AT&T Individual Signal Troubleshooting",
+      "steps": [
+        "Toggle Airplane Mode on for 30 seconds, then off.",
+        "Restart your device.",
+        "Check AT&T's coverage map at att.com/maps.",
+        "Update carrier settings (iOS: Settings > General > About).",
+        "Try a different network mode: Settings > Cellular > Voice & Data — try LTE if 5G shows issues.",
+        "Enable Wi-Fi Calling: Settings > Cellular > Wi-Fi Calling (included on most AT&T plans).",
+        "Use AT&T Smart Home Manager for home signal boosting recommendations.",
+        "Persistent gap? Report at att.com/coverage/report."
+      ],
+      "escalation_triggers": ["outage affecting neighbourhood", "signal issue after SIM swap", "repeated call drops in same location"],
+      "expected_resolution_minutes": 20,
+      "platform_responses": {
+        "x": "AT&T signal trouble: Airplane Mode toggle > restart > check att.com/maps for your area. Wi-Fi Calling available in Settings > Cellular > Wi-Fi Calling. Persistent gap? att.com/coverage/report ^PG",
+        "reddit": "**AT&T signal troubleshooting:**\n\n1. Airplane Mode on 30s → off\n2. Full device restart\n3. Check **att.com/maps** for your area\n4. iOS: Settings > General > About — accept carrier settings update\n5. Try LTE instead of 5G Auto: Settings > Cellular > Voice & Data\n6. **Wi-Fi Calling**: Settings > Cellular > Wi-Fi Calling (most plans included)\n7. Persistent? Report at **att.com/coverage/report**",
+        "review": "We're sorry to hear you're experiencing signal issues. Please try toggling Airplane Mode and restarting your device. You can check your coverage at att.com/maps. Wi-Fi Calling is included on most AT&T plans and can help in low-signal areas. Please call 800-331-0500 if the issue persists."
+      }
+    },
+    {
+      "category": "Device troubleshooting",
+      "carrier": "verizon",
+      "tier": 1,
+      "title": "Verizon Device General Troubleshooting",
+      "steps": [
+        "Perform a soft reset (full restart, not sleep/wake).",
+        "Check for pending software updates: Settings > General > Software Update (iOS) or Settings > System > System Update (Android).",
+        "Free up storage if device is >90% full — performance degrades significantly.",
+        "Check battery health: Settings > Battery > Battery Health (iOS). Below 80% causes throttling.",
+        "If a specific app is crashing: uninstall/reinstall, or check the app's own support page.",
+        "For Bluetooth/Wi-Fi issues: reset network settings.",
+        "Verizon warranty claims: verizon.com/repairs if device is within 1-year manufacturer warranty."
+      ],
+      "escalation_triggers": ["device purchased from Verizon less than 14 days ago", "hardware defect confirmed", "water damage"],
+      "expected_resolution_minutes": 20,
+      "platform_responses": {
+        "x": "Device trouble on Verizon: full restart > check for OS updates > free up storage if >90% full. App crashing? Uninstall and reinstall. Warranty issue? verizon.com/repairs ^PG",
+        "reddit": "**Verizon device troubleshooting:**\n\n1. Full restart (not just sleep/wake)\n2. Install pending OS updates: Settings > General > Software Update\n3. Storage >90% full? Free up space — Android and iOS both throttle when storage is near capacity\n4. iOS Battery Health <80%? Consider battery replacement (covered if within warranty)\n5. App crashing: uninstall > reinstall\n6. Wi-Fi/Bluetooth glitch: Reset Network Settings\n\nWarranty claim (within 1 year): **verizon.com/repairs**",
+        "review": "We're sorry you're having device trouble. Please start with a full device restart and check for OS updates. If storage is above 90% full, freeing space often resolves performance issues. For warranty repairs, please visit verizon.com/repairs."
+      }
+    },
+    {
+      "category": "Device troubleshooting",
+      "carrier": "tmobile",
+      "tier": 1,
+      "title": "T-Mobile Device General Troubleshooting",
+      "steps": [
+        "Restart the device fully.",
+        "Install pending OS and security updates.",
+        "Check storage — T-Mobile recommends keeping at least 15% free.",
+        "For T-Mobile-specific features (T-Mobile Tuesdays, Scam Shield): reinstall the T-Mobile app.",
+        "Device protection claim (JUMP! or Protection<360>): go to t-mobile.com/protection.",
+        "Manufacturer warranty: contact device manufacturer directly; T-Mobile can facilitate if purchased through T-Mobile."
+      ],
+      "escalation_triggers": ["device purchased <30 days ago with persistent hardware issue", "JUMP! claim dispute", "non-responsive touch screen"],
+      "expected_resolution_minutes": 20,
+      "platform_responses": {
+        "x": "T-Mobile device issues: restart > OS update > check storage (keep 15%+ free). T-Mobile app features not working? Reinstall the app. Device protection claim: t-mobile.com/protection ^PG",
+        "reddit": "**T-Mobile device troubleshooting:**\n\n1. Full restart\n2. OS updates: Settings > System Update\n3. Keep ≥15% storage free for optimal performance\n4. T-Mobile app features broken (Scam Shield, T-Mobile Tuesdays): reinstall the T-Mobile app\n5. Device protection (JUMP! / Protection<360>): claim at **t-mobile.com/protection**\n6. Manufacturer warranty: T-Mobile facilitates if purchased through them",
+        "review": "We apologize for the device issues you're experiencing. A full restart and OS update resolves most common problems. For device protection claims under JUMP! or Protection<360>, please visit t-mobile.com/protection. If the issue persists, please call 611."
+      }
+    },
+    {
+      "category": "Device troubleshooting",
+      "carrier": "att",
+      "tier": 1,
+      "title": "AT&T Device General Troubleshooting",
+      "steps": [
+        "Full device restart.",
+        "Check for OS and carrier updates.",
+        "Free up storage if >85% full.",
+        "AT&T Protect Advantage claim: file at att.com/deviceprotection.",
+        "In-store diagnostics: AT&T stores provide free device diagnostics.",
+        "For AT&T TV or Wi-Fi gateway devices: check att.com/support/equipment."
+      ],
+      "escalation_triggers": ["device defective within 14 days of purchase", "insurance claim dispute", "device stolen or lost"],
+      "expected_resolution_minutes": 20,
+      "platform_responses": {
+        "x": "AT&T device trouble: restart > update OS > free storage if >85% full. Device protection claim: att.com/deviceprotection. Free diagnostics at any AT&T store. ^PG",
+        "reddit": "**AT&T device troubleshooting:**\n\n1. Full restart and OS update\n2. Storage >85%? Free up space\n3. **AT&T Protect Advantage** claim: att.com/deviceprotection\n4. Free in-store diagnostics at any AT&T store\n5. Equipment issues (TV gateway, etc.): att.com/support/equipment",
+        "review": "We're sorry about the device difficulty. Please start with a full restart and OS update. For device protection claims, visit att.com/deviceprotection. You're also welcome to visit any AT&T store for a free diagnostic. Please call 800-331-0500 if you need further assistance."
+      }
+    },
+    {
+      "category": "Port/number transfer",
+      "carrier": "verizon",
+      "tier": 1,
+      "title": "Verizon Number Port Troubleshooting",
+      "steps": [
+        "Port-in to Verizon: keep your old SIM active until Verizon confirms the port is complete — do not cancel early.",
+        "Port typically completes within 2-4 hours; up to 24 hours for some landline numbers.",
+        "Required: account number and PIN/password from your old carrier (not your own PIN).",
+        "Check port status: My Verizon app > Account > Number Transfer Status.",
+        "Port rejected? Most common reason: account number or PIN submitted incorrectly. Re-initiate with correct details.",
+        "Port-out from Verizon: generate a transfer PIN at verizon.com/transfer-pin (valid 7 days)."
+      ],
+      "escalation_triggers": ["port rejected twice with correct info", "number transferred to wrong account", "port pending >48 hours"],
+      "expected_resolution_minutes": 30,
+      "platform_responses": {
+        "x": "Verizon number port: keep old SIM active until transfer completes (2-4 hrs, up to 24 for landlines). Track status in My Verizon app > Account > Number Transfer. Port rejected? Usually wrong account# or PIN from old carrier. ^PG",
+        "reddit": "**Verizon number port guide:**\n\n**Porting IN**: Keep your old SIM active until Verizon confirms completion. Takes 2-4 hours (up to 24 for landlines). Need: old carrier account number + PIN/password.\n\nCheck status: My Verizon app > Account > Number Transfer Status\n\nPort rejected? 90% of rejections are wrong account number or PIN from the old carrier — re-initiate with corrected details.\n\n**Porting OUT**: Get your Verizon transfer PIN at verizon.com/transfer-pin (valid 7 days).",
+        "review": "We understand number porting can be stressful. Keep your old SIM active until the transfer completes — typically 2-4 hours. You can track the status in the My Verizon app under Account > Number Transfer. If your port was rejected, it's most commonly due to an incorrect account number or PIN from your previous carrier."
+      }
+    },
+    {
+      "category": "Port/number transfer",
+      "carrier": "tmobile",
+      "tier": 1,
+      "title": "T-Mobile Number Port Troubleshooting",
+      "steps": [
+        "Porting in to T-Mobile: do not cancel old service until T-Mobile confirms transfer complete.",
+        "Port typically completes within 4 hours for mobile numbers.",
+        "Required from old carrier: account number and account PIN (not your personal account password).",
+        "Check status: T-Mobile app > Account > Transfer Status.",
+        "Common rejection reasons: incorrect account number, number not matching account, port freeze (ask old carrier to remove).",
+        "Porting out: request T-Mobile account number and PIN for the new carrier."
+      ],
+      "escalation_triggers": ["port freeze on old account", "number transferred to wrong line", "port pending >24 hours"],
+      "expected_resolution_minutes": 30,
+      "platform_responses": {
+        "x": "T-Mobile number port usually completes in ~4 hours. Keep old SIM active until T-Mobile confirms. Port rejected? Check you have the right account# + PIN from your old carrier (not your own PIN). Status: T-Mobile app > Account. ^PG",
+        "reddit": "**T-Mobile number porting:**\n\n**Porting in**: Don't cancel old service until transfer is confirmed. Typically ~4 hours.\n\nYou need from your old carrier:\n- Account number (not phone number)\n- Account PIN/password (set by account holder, not your voicemail PIN)\n\nCommon rejection: wrong account number or PIN. Request them directly from old carrier's support line.\n\nStatus check: T-Mobile app > Account > Transfer Status",
+        "review": "We're sorry you're having port difficulties. Number transfers typically complete within 4 hours. Please ensure you have the correct account number and PIN from your previous carrier — these are the most common rejection causes. You can check port status in the T-Mobile app. Please call 611 if it's been more than 24 hours."
+      }
+    },
+    {
+      "category": "Port/number transfer",
+      "carrier": "att",
+      "tier": 1,
+      "title": "AT&T Number Port Troubleshooting",
+      "steps": [
+        "Porting in to AT&T: keep old SIM/service active until AT&T confirms the transfer.",
+        "AT&T ports typically complete within 2-8 hours.",
+        "Required: old carrier account number and billing PIN/password.",
+        "Port status: myAT&T app > My Wireless > Number Transfer.",
+        "Port rejected: verify account number and PIN with old carrier. Confirm no port freeze or account disputes.",
+        "Porting out from AT&T: AT&T number transfers out automatically when new carrier initiates — no action needed unless you have a port freeze."
+      ],
+      "escalation_triggers": ["port freeze on AT&T account", "port failed 3+ times", "number ported to wrong carrier"],
+      "expected_resolution_minutes": 30,
+      "platform_responses": {
+        "x": "AT&T number port: 2-8 hours to complete. Keep old SIM active until confirmed. Check myAT&T app > My Wireless > Number Transfer. Port rejected? Verify account# + billing PIN from old carrier. ^PG",
+        "reddit": "**AT&T number port guide:**\n\n**Porting in**: Keep old service active until AT&T confirms. Typically 2-8 hours.\n\nRequired from old carrier:\n- Account number\n- Billing PIN (not your AT&T PIN)\n\nCheck status: myAT&T app > My Wireless > Number Transfer\n\nPort rejected twice with correct info? Call **800-331-0500** — may require manual processing or a port freeze investigation.\n\n**Porting out**: AT&T does it automatically when your new carrier requests it.",
+        "review": "We apologize for the number transfer difficulties. AT&T ports typically complete within 2-8 hours. Please ensure you have the correct account number and billing PIN from your previous carrier. You can check your transfer status in the myAT&T app. Please call 800-331-0500 if you need further assistance."
+      }
+    },
+    {
+      "category": "Roaming issues",
+      "carrier": "verizon",
+      "tier": 1,
+      "title": "Verizon International Roaming Troubleshooting",
+      "steps": [
+        "Verify TravelPass or International Plan is active: My Verizon app > Account > International Services.",
+        "TravelPass activates automatically on first use in the destination country ($10/day in most countries).",
+        "Toggle Airplane Mode on/off upon landing to register with local network.",
+        "Ensure 'Data Roaming' is enabled: Settings > Cellular > Cellular Data Options > Data Roaming.",
+        "If calls work but data doesn't: toggle Data Roaming off and on again.",
+        "Check if your destination is covered: verizon.com/international.",
+        "Disable Wi-Fi Calling while abroad if experiencing call quality issues."
+      ],
+      "escalation_triggers": ["unexpected roaming charges on non-TravelPass plan", "device not registering on any network abroad", "emergency services access issues"],
+      "expected_resolution_minutes": 20,
+      "platform_responses": {
+        "x": "Verizon roaming: confirm TravelPass is active (My Verizon app > International Services). Toggle Airplane Mode on landing. Data Roaming enabled? (Settings > Cellular > Cellular Data Options). Country covered? Check verizon.com/international ^PG",
+        "reddit": "**Verizon international roaming:**\n\n1. Confirm TravelPass or International Plan: My Verizon app > Account > International Services\n2. TravelPass = $10/day in most countries, activates on first use\n3. Toggle Airplane Mode on/off when you land\n4. Enable Data Roaming: Settings > Cellular > Cellular Data Options > Data Roaming\n5. Check destination coverage: **verizon.com/international**\n\nData working but calls not? Try disabling Wi-Fi Calling while abroad.",
+        "review": "We're sorry to hear about roaming difficulties. Please confirm your TravelPass or International Plan is active in the My Verizon app under International Services. Upon arrival, toggle Airplane Mode on and off and ensure Data Roaming is enabled in your device settings. Check destination coverage at verizon.com/international."
+      }
+    },
+    {
+      "category": "Roaming issues",
+      "carrier": "tmobile",
+      "tier": 1,
+      "title": "T-Mobile International Roaming Troubleshooting",
+      "steps": [
+        "T-Mobile Magenta/Go5G plans include free roaming in 215+ countries (2G data speeds; texts free; calls $0.25/min).",
+        "For high-speed data: purchase an International Day Pass ($5/day) or High-Speed Data Pass.",
+        "Toggle Airplane Mode on landing to register with the local partner network.",
+        "Settings > Cellular > enable Data Roaming.",
+        "Confirm your plan includes international: T-Mobile app > Account > Plan Details.",
+        "If coverage is unavailable: T-Mobile partners with local carriers — check t-mobile.com/roaming."
+      ],
+      "escalation_triggers": ["charges on plan that includes free roaming", "unable to connect in covered country", "international pass not activating"],
+      "expected_resolution_minutes": 20,
+      "platform_responses": {
+        "x": "T-Mobile Magenta/Go5G includes free roaming in 215+ countries (2G speeds). Need high-speed? Add International Day Pass ($5/day). Toggle Airplane Mode on landing + enable Data Roaming. Details at t-mobile.com/roaming ^PG",
+        "reddit": "**T-Mobile international roaming:**\n\n- **Magenta/Go5G plans**: Free roaming in 215+ countries — unlimited texts, $0.25/min calls, 2G data\n- **Need speed?**: International Day Pass ($5/day) upgrades to LTE in most countries\n- Toggle Airplane Mode on/off after landing\n- Enable Data Roaming in Settings > Cellular\n- Confirm plan includes international: T-Mobile app > Account > Plan Details\n- Coverage map: **t-mobile.com/roaming**",
+        "review": "Thank you for reaching out. T-Mobile Magenta and Go5G plans include free roaming in over 215 countries with unlimited texts and 2G data. For faster speeds, you can add an International Day Pass. Please toggle Airplane Mode on landing and ensure Data Roaming is enabled. Check t-mobile.com/roaming for coverage."
+      }
+    },
+    {
+      "category": "Roaming issues",
+      "carrier": "att",
+      "tier": 1,
+      "title": "AT&T International Roaming Troubleshooting",
+      "steps": [
+        "Check your international plan: myAT&T app > Manage > International.",
+        "AT&T Passport: $10/day for data, texts, and discounted calls in 210+ countries.",
+        "Toggle Airplane Mode on landing to connect to local partner network.",
+        "Enable Data Roaming: Settings > Cellular > Cellular Data Options > Data Roaming.",
+        "If voice works but data doesn't: Settings > Cellular > APN — verify APN is 'phone' for AT&T.",
+        "Check covered destinations at att.com/international."
+      ],
+      "escalation_triggers": ["unexpected charges outside AT&T Passport coverage", "APN settings not resolving data", "emergency call routing issues"],
+      "expected_resolution_minutes": 20,
+      "platform_responses": {
+        "x": "AT&T international: confirm Passport plan (myAT&T app > Manage > International). Toggle Airplane Mode on landing + enable Data Roaming. No data but calls work? Check APN = 'phone'. Coverage: att.com/international ^PG",
+        "reddit": "**AT&T international roaming:**\n\n1. Confirm AT&T Passport is active: myAT&T app > Manage > International\n2. AT&T Passport: $10/day in 210+ countries (data + texts + discounted calls)\n3. Toggle Airplane Mode on/off when you land\n4. Enable Data Roaming: Settings > Cellular > Cellular Data Options\n5. Data not working? Check APN: Settings > Cellular > Cellular Data Network — APN should be 'phone'\n6. Coverage: **att.com/international**",
+        "review": "We apologize for the roaming difficulties. Please confirm your AT&T Passport plan is active in the myAT&T app under Manage > International. Upon landing, toggle Airplane Mode and ensure Data Roaming is enabled. If calls work but data doesn't, please check your APN settings. Visit att.com/international for coverage details."
+      }
+    },
+    {
+      "category": "Network outage (area-wide)",
+      "carrier": "verizon",
+      "tier": 2,
+      "title": "Verizon Area Outage — Requires Human",
+      "steps": [
+        "This issue requires escalation to the Verizon network operations team.",
+        "Customer can check outage status at verizon.com/outage or downdetector.com.",
+        "Provide estimated restoration time if available from network ops."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "We're aware of service disruptions in your area and our network team is actively working to restore service. Check verizon.com/outage for real-time updates. We apologize for the inconvenience. ^PG",
+        "reddit": "Our network team is actively investigating the service disruption in your area. Please check **verizon.com/outage** for real-time status updates. We sincerely apologize for the impact to your service.",
+        "review": "We're sorry for the service disruption in your area. Our network operations team is actively working to restore service. Please check verizon.com/outage for real-time updates."
+      }
+    },
+    {
+      "category": "Network outage (area-wide)",
+      "carrier": "tmobile",
+      "tier": 2,
+      "title": "T-Mobile Area Outage — Requires Human",
+      "steps": [
+        "Escalate to T-Mobile network operations.",
+        "Customer can check t-mobile.com/coverage/status or downdetector.com."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "We're aware of service issues in your area and our network team is investigating. Check t-mobile.com/coverage/status for updates. We apologize for the disruption. ^PG",
+        "reddit": "Our network team is aware of service disruptions in your area and is actively investigating. Please check **t-mobile.com/coverage/status** for real-time updates.",
+        "review": "We're sorry for the service disruption. Our network team is actively working to restore service in your area. Please check t-mobile.com/coverage/status for real-time updates."
+      }
+    },
+    {
+      "category": "Network outage (area-wide)",
+      "carrier": "att",
+      "tier": 2,
+      "title": "AT&T Area Outage — Requires Human",
+      "steps": [
+        "Escalate to AT&T network operations.",
+        "Customer can check att.com/outages or downdetector.com."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "We're aware of service disruptions in your area and our team is working urgently to restore service. Check att.com/outages for real-time status. We apologize for the inconvenience. ^PG",
+        "reddit": "Our network team is actively investigating service disruptions in your area. For real-time status, please check **att.com/outages**. We sincerely apologize for the impact.",
+        "review": "We apologize for the service disruption you're experiencing. Our network team is working urgently to restore service. Please check att.com/outages for real-time updates."
+      }
+    },
+    {
+      "category": "Billing dispute",
+      "carrier": "verizon",
+      "tier": 2,
+      "title": "Verizon Billing Dispute — Requires Human",
+      "steps": [
+        "Escalate: requires account access to review actual charges and issue credits.",
+        "Human agent should pull full billing history and compare to plan terms.",
+        "Check for unauthorised third-party charges and submit for reversal if found."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "We're sorry to hear about a billing concern. This requires a billing specialist to review your account — please DM us or call *611 so we can look into this for you. ^PG",
+        "reddit": "Billing disputes require access to your account to review and resolve. Please contact Verizon directly:\n- **Call**: *611 from your Verizon phone\n- **Chat**: verizon.com/support\n- **Store**: Any Verizon store\n\nA billing specialist can review your charges and issue credits where appropriate.",
+        "review": "We're very sorry to hear about this billing concern. This requires a billing specialist to review your account directly. Please call *611 or visit a Verizon store so we can investigate and resolve this for you as quickly as possible."
+      }
+    },
+    {
+      "category": "Billing dispute",
+      "carrier": "tmobile",
+      "tier": 2,
+      "title": "T-Mobile Billing Dispute — Requires Human",
+      "steps": [
+        "Escalate: account-specific billing review and credit issuance requires agent.",
+        "Review plan terms and promotional agreements against actual charges."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "We're sorry about this billing concern. Our billing team can review your account and resolve this — please DM us your details or call 611 from your T-Mobile phone. ^PG",
+        "reddit": "Billing disputes need an agent who can access your account. Reach T-Mobile billing:\n- **611** from your T-Mobile phone\n- **1-800-937-8997**\n- Chat at t-mobile.com\n\nBring your bill details — agents can review charges and issue credits where warranted.",
+        "review": "We sincerely apologize for the billing issue you've encountered. Resolving this requires a billing specialist with access to your account. Please call 611 or chat at t-mobile.com — our team will review your charges and make it right."
+      }
+    },
+    {
+      "category": "Billing dispute",
+      "carrier": "att",
+      "tier": 2,
+      "title": "AT&T Billing Dispute — Requires Human",
+      "steps": [
+        "Escalate: requires agent access to review account charges and initiate credit.",
+        "Check for AT&T Next financing discrepancies and promotional pricing."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "We apologise for the billing concern. A billing specialist needs to review your account to resolve this — please DM us or call 800-331-0500. ^PG",
+        "reddit": "AT&T billing disputes require an agent with account access to investigate and issue credits:\n- **800-331-0500**\n- Chat at att.com/support\n- Visit any AT&T store\n\nHave your bill and a list of the disputed charges ready.",
+        "review": "We are very sorry for the billing issue you're experiencing. Resolving billing disputes requires a specialist with access to your account. Please call 800-331-0500 or visit att.com/support so our team can review and correct this for you."
+      }
+    },
+    {
+      "category": "Contract/plan change",
+      "carrier": "verizon",
+      "tier": 2,
+      "title": "Verizon Contract/Plan Change — Requires Human",
+      "steps": [
+        "Escalate: plan changes involve account-level actions and may trigger contract implications.",
+        "Agent should verify eligibility, promo stacking, and device financing impacts before any change."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "Plan changes on Verizon require account review to ensure no billing impact. Please DM us or call *611 and a specialist will help you find the right plan. ^PG",
+        "reddit": "Plan changes are best handled by a specialist who can review your account, financing agreements, and available promotions before making any change. Contact Verizon:\n- **\\*611** from your Verizon phone\n- Chat at verizon.com\n- Visit a Verizon store",
+        "review": "We understand you'd like to make changes to your plan. To ensure the change is applied correctly without affecting your device financing or promotional pricing, please call *611 or visit a Verizon store."
+      }
+    },
+    {
+      "category": "Contract/plan change",
+      "carrier": "tmobile",
+      "tier": 2,
+      "title": "T-Mobile Contract/Plan Change — Requires Human",
+      "steps": [
+        "Escalate: plan changes may affect promotional pricing and device financing.",
+        "Agent should review account before initiating any changes."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "Plan changes need account review to protect your promotions and pricing — please DM us or call 611 so a specialist can help. ^PG",
+        "reddit": "Plan changes on T-Mobile can affect promotional pricing and device financing. Recommend contacting T-Mobile directly:\n- **611** from your T-Mobile phone\n- Chat at t-mobile.com\n- Visit a T-Mobile store",
+        "review": "We'd be happy to help with a plan change. To ensure your promotional pricing and device financing aren't affected, please call 611 or visit a T-Mobile store where a specialist can review your account."
+      }
+    },
+    {
+      "category": "Contract/plan change",
+      "carrier": "att",
+      "tier": 2,
+      "title": "AT&T Contract/Plan Change — Requires Human",
+      "steps": [
+        "Escalate: plan changes on AT&T may affect AT&T Next installment agreements.",
+        "Agent should verify all contract implications before proceeding."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "Plan changes require a review of your account and any financing agreements — please DM us or call 800-331-0500 so we can help you make the right change. ^PG",
+        "reddit": "AT&T plan changes can affect your AT&T Next installment plan and promotional pricing. Recommended: call **800-331-0500** or visit an AT&T store so a specialist reviews your account before any change.",
+        "review": "We'd love to help you with a plan change. To protect your current pricing and device installment plan, please call 800-331-0500 or visit an AT&T store so our team can find the best option for you."
+      }
+    },
+    {
+      "category": "Account access / lock",
+      "carrier": "verizon",
+      "tier": 2,
+      "title": "Verizon Account Access — Requires Human",
+      "steps": [
+        "Escalate: account lockouts are security-sensitive and require identity verification.",
+        "Never attempt account unlock via social media channels — must go through secure channel."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "Account access issues are security-sensitive and require identity verification. Please call *611 (secure, verified channel) — we cannot assist with account access via social media. ^PG",
+        "reddit": "Account lockouts require identity verification through a secure channel. **Do not share any account details on social media.** Please call **\\*611** from your Verizon phone or visit a Verizon store with a valid photo ID.",
+        "review": "We're very sorry you're locked out of your account. For your security, account access issues must be handled through a verified channel. Please call *611 or visit any Verizon store with a valid photo ID."
+      }
+    },
+    {
+      "category": "Account access / lock",
+      "carrier": "tmobile",
+      "tier": 2,
+      "title": "T-Mobile Account Access — Requires Human",
+      "steps": [
+        "Escalate: account security issues require verified identity check.",
+        "Direct customer to secure channels only."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "Account lock issues require identity verification — please do not share account details here. Call 611 (secure channel) or visit a T-Mobile store with photo ID. ^PG",
+        "reddit": "For account access/lockout issues, please contact T-Mobile through a **secure channel only** — never share account details on social media:\n- **611** from your T-Mobile phone\n- **1-800-937-8997**\n- T-Mobile store with valid photo ID",
+        "review": "We're sorry you're having account access trouble. For your security, please call 611 or visit a T-Mobile store with a valid photo ID. Our team can verify your identity and restore access securely."
+      }
+    },
+    {
+      "category": "Account access / lock",
+      "carrier": "att",
+      "tier": 2,
+      "title": "AT&T Account Access — Requires Human",
+      "steps": [
+        "Escalate: security-sensitive. Identity verification required.",
+        "Do not provide account unlock assistance through public social channels."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "Account security issues require verified identity — please do not share details here. Call 800-331-0500 (secure line) or visit an AT&T store with valid photo ID. ^PG",
+        "reddit": "Account lockout issues are security-sensitive and require identity verification:\n- **800-331-0500**\n- Visit any AT&T store with a valid government-issued photo ID\n\nPlease do not share any account details on social media.",
+        "review": "We sincerely apologize for the account access difficulty. For your security, please call 800-331-0500 or visit an AT&T store with a valid photo ID. Our team will verify your identity and restore access."
+      }
+    },
+    {
+      "category": "General complaint / NPS risk",
+      "carrier": "verizon",
+      "tier": 2,
+      "title": "Verizon General Complaint / Retention Risk — Requires Human",
+      "steps": [
+        "Escalate to retention specialist.",
+        "High churn risk — prioritize empathy, account review, and retention offer eligibility."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "We're truly sorry to hear about your experience. We'd like to make this right — please DM us or call *611 so a retention specialist can review your account and find the best solution. ^PG",
+        "reddit": "We're very sorry to hear you've had a poor experience with Verizon. A retention specialist can review your account and discuss what options we have to address your concerns. Please call **\\*611** or DM us.",
+        "review": "We are deeply sorry about your experience and understand your frustration. This feedback matters to us. Please call *611 or visit a Verizon store — our team would like the opportunity to make this right for you."
+      }
+    },
+    {
+      "category": "General complaint / NPS risk",
+      "carrier": "tmobile",
+      "tier": 2,
+      "title": "T-Mobile General Complaint / Retention Risk — Requires Human",
+      "steps": [
+        "Escalate to retention specialist.",
+        "Review account for loyalty offers and service credits."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "We're so sorry about your experience. Please DM us or call 611 — we want to make this right and find a solution that works for you. ^PG",
+        "reddit": "We sincerely apologize for your experience with T-Mobile. Please reach out to us at **611** so a specialist can review your account and find a way to make this right.",
+        "review": "We are truly sorry about the experience you've had. Your feedback is very important to us. Please call 611 so our team can review your account and work to resolve this — we want to earn your trust back."
+      }
+    },
+    {
+      "category": "General complaint / NPS risk",
+      "carrier": "att",
+      "tier": 2,
+      "title": "AT&T General Complaint / Retention Risk — Requires Human",
+      "steps": [
+        "Escalate to retention specialist.",
+        "Review account history, identify root cause, check loyalty offer eligibility."
+      ],
+      "escalation_triggers": ["always escalate"],
+      "expected_resolution_minutes": null,
+      "platform_responses": {
+        "x": "We're very sorry about your experience. Please DM us or call 800-331-0500 — a specialist will review your account and do everything possible to resolve this. ^PG",
+        "reddit": "We sincerely apologize for your experience. Please call **800-331-0500** so a retention specialist can review your account and work to make this right for you.",
+        "review": "We are deeply sorry about the experience you've had with AT&T. Your feedback is important and this is not the standard we hold ourselves to. Please call 800-331-0500 — our team will review your account and do everything possible to resolve this."
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets — never commit
+.env
+
+# Runtime artefacts
+logs/
+chroma_db/
+*.jsonl
+
+# Tool caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/

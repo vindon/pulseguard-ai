@@ -1,0 +1,12 @@
+{
+  "signal_id": "fix-spam-001",
+  "source": "x",
+  "source_id": "tweet-spam-001",
+  "carrier_hint": null,
+  "author_handle": "e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+  "content": "WIN A FREE IPHONE! Just follow @Verizon and retweet this post! 🎁🎁🎁 #giveaway #free",
+  "url": "https://x.com/i/web/status/tweet-spam-001",
+  "posted_at": "2026-06-08T11:00:00+00:00",
+  "ingested_at": "2026-06-08T11:00:05+00:00",
+  "adapter_metadata": {}
+}

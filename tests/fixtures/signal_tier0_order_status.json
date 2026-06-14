@@ -1,0 +1,12 @@
+{
+  "signal_id": "fix-tier0-order-001",
+  "source": "reddit",
+  "source_id": "reddit-order-001",
+  "carrier_hint": "tmobile",
+  "author_handle": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+  "content": "T-Mobile order status stuck on processing for 5 days already. Ordered a new phone last week and it still says processing. Where is my order?",
+  "url": "https://reddit.com/r/tmobile/comments/reddit-order-001",
+  "posted_at": "2026-06-08T09:30:00+00:00",
+  "ingested_at": "2026-06-08T09:30:05+00:00",
+  "adapter_metadata": {"subreddit": "tmobile", "score": 15, "num_comments": 3}
+}
