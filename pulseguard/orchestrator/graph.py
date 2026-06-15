@@ -42,16 +42,23 @@ class PulseGuardOrchestrator:
         logger.info("orchestrator_starting")
 
         self._tasks = [
-            asyncio.create_task(self._poll_x()),
-            asyncio.create_task(self._poll_reddit()),
-            asyncio.create_task(self._poll_daily("google_play")),
-            asyncio.create_task(self._poll_daily("app_store")),
-            asyncio.create_task(self._poll_daily("trustpilot")),
             asyncio.create_task(self._consume_validated_signals()),
             asyncio.create_task(self._consume_triage_reports()),
             asyncio.create_task(self._consume_escalation_needed()),
             asyncio.create_task(self._update_adapter_health()),
         ]
+
+        if settings.enable_adapter_polling:
+            self._tasks += [
+                asyncio.create_task(self._poll_x()),
+                asyncio.create_task(self._poll_reddit()),
+                asyncio.create_task(self._poll_daily("google_play")),
+                asyncio.create_task(self._poll_daily("app_store")),
+                asyncio.create_task(self._poll_daily("trustpilot")),
+            ]
+        else:
+            logger.warning("adapter_polling_disabled")
+
         logger.info("orchestrator_started", tasks=len(self._tasks))
 
     async def stop(self) -> None:

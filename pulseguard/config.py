@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     # Misc
     environment: str = "development"  # "development" | "production"
     audit_log_path: str = "logs/audit.jsonl"
+    enable_adapter_polling: bool = True
 
     @property
     def carrier_list(self) -> list[str]:
