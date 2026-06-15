@@ -12,8 +12,8 @@ When implementing:
 """
 
 from pulseguard.adapters.base import FeedAdapter
-from pulseguard.adapters.carrier_configs import CARRIER_CONFIGS, CarrierConfig
-from pulseguard.models.adapters import AdapterHealth
+from pulseguard.adapters.carrier_configs import CARRIER_CONFIGS
+from pulseguard.models.adapters import AdapterHealth, CarrierConfig
 from pulseguard.models.signals import RawSignal
 
 

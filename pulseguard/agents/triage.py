@@ -12,6 +12,7 @@ from typing import Any, TypedDict
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from pulseguard.logging_config import get_logger
 from pulseguard.models.signals import ValidatedSignal
@@ -82,7 +83,7 @@ _TIER_MAP = {
 
 
 class TriageState(TypedDict):
-    validated_signal: dict
+    validated_signal: dict[str, Any]
     category: str
     resolution_tier: int
     severity_score: int
@@ -188,11 +189,11 @@ async def emit_routed(state: TriageState) -> dict[str, Any]:
     report = TriageReport(
         signal_id=signal_id,
         category=state.get("category", "General complaint / NPS risk"),
-        resolution_tier=state.get("resolution_tier", 2),  # type: ignore[arg-type]
+        resolution_tier=state.get("resolution_tier", 2),
         severity_score=state.get("severity_score", 3),
         sentiment_score=state.get("sentiment_score", 0.0),
         churn_risk=state.get("churn_risk", False),
-        routing_decision=state.get("routing_decision", "ESCALATION"),  # type: ignore[arg-type]
+        routing_decision=state.get("routing_decision", "ESCALATION"),
         routing_rationale=state.get("routing_rationale", ""),
         kb_context=state.get("kb_context"),
         triage_trace_id=state.get("trace_id", ""),
@@ -229,7 +230,7 @@ async def emit_routed(state: TriageState) -> dict[str, Any]:
     return {}
 
 
-def build_triage_graph() -> StateGraph:
+def build_triage_graph() -> CompiledStateGraph:
     graph = StateGraph(TriageState)
     graph.add_node("classify_issue_type", classify_issue_type)
     graph.add_node("assign_resolution_tier", assign_resolution_tier)

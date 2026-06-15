@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +14,7 @@ class RawSignal(BaseModel):
     url: str
     posted_at: datetime
     ingested_at: datetime
-    adapter_metadata: dict = Field(default_factory=dict)
+    adapter_metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ValidatedSignal(BaseModel):

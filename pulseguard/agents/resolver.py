@@ -13,6 +13,7 @@ from typing import Any, TypedDict
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from pulseguard.logging_config import get_logger
 from pulseguard.models.resolution import ResolutionRecord
@@ -82,10 +83,20 @@ Platform constraints:
 Return ONLY the formatted response, no other text."""
 
 
+def _extract_text(content: str | list[str | dict[Any, Any]]) -> str:
+    """Extract plain text from a langchain-anthropic response content field."""
+    if isinstance(content, str):
+        return content
+    for block in content:
+        if isinstance(block, dict) and block.get("type") == "text":
+            return str(block.get("text", ""))
+    return ""
+
+
 class ResolverState(TypedDict):
-    triage_report: dict
-    validated_signal: dict
-    kb_script: dict | None
+    triage_report: dict[str, Any]
+    validated_signal: dict[str, Any]
+    kb_script: dict[str, Any] | None
     draft_response: str
     confidence_score: float
     confidence_reason: str
@@ -165,7 +176,7 @@ async def validate_confidence(state: ResolverState) -> dict[str, Any]:
     )
     messages = [SystemMessage(content=_CONFIDENCE_SYSTEM), HumanMessage(content=prompt)]
     response = await _MODEL.ainvoke(messages)
-    reply = response.content.strip()
+    reply = _extract_text(response.content).strip()
 
     try:
         score_str = reply.split("|")[0].strip()
@@ -214,7 +225,7 @@ async def format_for_channel(state: ResolverState) -> dict[str, Any]:
     )
     messages = [SystemMessage(content=_FORMAT_SYSTEM), HumanMessage(content=prompt)]
     response = await _MODEL.ainvoke(messages)
-    formatted = response.content.strip()
+    formatted = _extract_text(response.content).strip()
 
     logger.info("resolver_formatted", source=source, length=len(formatted))
     return {"formatted_response": formatted}
@@ -273,7 +284,7 @@ def _route_after_decide(state: ResolverState) -> str:
     return "format_for_channel" if state.get("resolved") else "emit_resolved"
 
 
-def build_resolver_graph() -> StateGraph:
+def build_resolver_graph() -> CompiledStateGraph:
     graph = StateGraph(ResolverState)
     graph.add_node("retrieve_resolution", retrieve_resolution)
     graph.add_node("create_draft", draft_response)
@@ -304,7 +315,7 @@ resolver_graph = build_resolver_graph()
 
 
 async def process_triage_report(
-    triage_report: TriageReport, validated_signal: dict, trace_id: str
+    triage_report: TriageReport, validated_signal: dict[str, Any], trace_id: str
 ) -> None:
     import uuid
 

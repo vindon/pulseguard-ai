@@ -6,6 +6,7 @@ Manages adapter polling loops, event routing, and circuit breakers.
 import asyncio
 import json
 import uuid
+from typing import Any
 
 from pulseguard.adapters.app_store_adapter import AppStoreAdapter
 from pulseguard.adapters.google_play_adapter import GooglePlayAdapter
@@ -34,7 +35,7 @@ class PulseGuardOrchestrator:
             "trustpilot": TrustpilotAdapter(),
         }
         self._running = False
-        self._tasks: list[asyncio.Task] = []
+        self._tasks: list[asyncio.Task[None]] = []
 
     async def start(self) -> None:
         self._running = True
@@ -238,7 +239,7 @@ class PulseGuardOrchestrator:
                 logger.error("health_update_error", error=str(exc))
             await asyncio.sleep(60)
 
-    async def get_status(self) -> dict:
+    async def get_status(self) -> dict[str, Any]:
         queue_depth = await global_circuit_breaker.get_queue_depth()
         cb_states = {name: await cb.get_state() for name, cb in adapter_circuit_breakers.items()}
         redis = get_async_redis()

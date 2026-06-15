@@ -118,7 +118,7 @@ class IngestRequest(BaseModel):
     url: str
     posted_at: datetime
     carrier_hint: str | None = None
-    adapter_metadata: dict = {}
+    adapter_metadata: dict[str, Any] = {}
 
 
 class AckRequest(BaseModel):
@@ -133,7 +133,7 @@ async def ingest_signal(req: IngestRequest) -> dict[str, Any]:
     """Manually ingest a signal (for testing and integration)."""
     signal = RawSignal(
         signal_id=str(uuid.uuid4()),
-        source=req.source,  # type: ignore[arg-type]
+        source=req.source,
         source_id=req.source_id,
         carrier_hint=req.carrier_hint,
         author_handle=hash_handle(req.author_handle),

@@ -2,9 +2,9 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 
 from pulseguard.adapters.base import FeedAdapter
-from pulseguard.adapters.carrier_configs import CARRIER_CONFIGS, CarrierConfig
+from pulseguard.adapters.carrier_configs import CARRIER_CONFIGS
 from pulseguard.logging_config import get_logger
-from pulseguard.models.adapters import AdapterHealth
+from pulseguard.models.adapters import AdapterHealth, CarrierConfig
 from pulseguard.models.signals import RawSignal
 
 logger = get_logger(__name__)
@@ -84,7 +84,7 @@ class GooglePlayAdapter(FeedAdapter):
             status = "DEGRADED"
         return AdapterHealth(
             adapter_name="google_play",
-            status=status,  # type: ignore[arg-type]
+            status=status,
             last_successful_fetch=self._last_successful_fetch,
             consecutive_errors=self._consecutive_errors,
         )

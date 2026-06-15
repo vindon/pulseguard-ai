@@ -12,6 +12,7 @@ from typing import Any, TypedDict
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from pulseguard.logging_config import get_logger
 from pulseguard.models.escalation import EscalationBrief
@@ -54,8 +55,8 @@ _P1_CATEGORIES = {"Account access / lock", "Network outage (area-wide)"}
 
 class EscalationState(TypedDict):
     signal_id: str
-    triage_report: dict
-    validated_signal: dict
+    triage_report: dict[str, Any]
+    validated_signal: dict[str, Any]
     attempted_resolution: str | None
     brief_summary: str
     recommended_action: str
@@ -239,7 +240,7 @@ def _build_brief(state: EscalationState) -> EscalationBrief:
         source_platform=raw.get("source", ""),
         carrier=vs.get("detected_carrier", "unknown"),
         category=report.get("category", ""),
-        severity=state.get("severity", "P2"),  # type: ignore[arg-type]
+        severity=state.get("severity", "P2"),
         sentiment_score=report.get("sentiment_score", 0.0),
         churn_risk=report.get("churn_risk", False),
         original_post_url=raw.get("url", ""),
@@ -250,7 +251,7 @@ def _build_brief(state: EscalationState) -> EscalationBrief:
     )
 
 
-def build_escalation_graph() -> StateGraph:
+def build_escalation_graph() -> CompiledStateGraph:
     graph = StateGraph(EscalationState)
     graph.add_node("compose_brief", compose_brief)
     graph.add_node("assign_priority", assign_priority)
@@ -273,7 +274,7 @@ escalation_graph = build_escalation_graph()
 
 async def process_escalation(
     triage_report: TriageReport,
-    validated_signal: dict,
+    validated_signal: dict[str, Any],
     trace_id: str,
     attempted_resolution: str | None = None,
 ) -> None:

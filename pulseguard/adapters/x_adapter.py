@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 import asyncio
 from datetime import UTC, datetime
 from typing import Any
 
 import httpx
+import redis.asyncio as aioredis
 
 from pulseguard.adapters.base import FeedAdapter
-from pulseguard.adapters.carrier_configs import CARRIER_CONFIGS, CarrierConfig
+from pulseguard.adapters.carrier_configs import CARRIER_CONFIGS
 from pulseguard.config import settings
 from pulseguard.logging_config import get_logger
-from pulseguard.models.adapters import AdapterHealth
+from pulseguard.models.adapters import AdapterHealth, CarrierConfig
 from pulseguard.models.signals import RawSignal
 
 logger = get_logger(__name__)
@@ -40,7 +43,7 @@ class XAdapter(FeedAdapter):
     name = "x"
     carrier_configs: list[CarrierConfig] = list(CARRIER_CONFIGS.values())
 
-    def __init__(self, redis_client: Any = None) -> None:
+    def __init__(self, redis_client: aioredis.Redis[str] | None = None) -> None:
         self._redis = redis_client
         self._consecutive_errors = 0
         self._last_successful_fetch: datetime | None = None
@@ -184,7 +187,7 @@ class XAdapter(FeedAdapter):
 
         return AdapterHealth(
             adapter_name="x",
-            status=status,  # type: ignore[arg-type]
+            status=status,
             last_successful_fetch=self._last_successful_fetch,
             consecutive_errors=self._consecutive_errors,
             monthly_cap_used=cap_used,

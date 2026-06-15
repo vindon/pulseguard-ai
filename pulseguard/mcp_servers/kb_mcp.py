@@ -1,9 +1,13 @@
 import json
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 import chromadb
-from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+from chromadb.api import ClientAPI
+from chromadb.utils.embedding_functions.sentence_transformer_embedding_function import (
+    SentenceTransformerEmbeddingFunction,
+)
 from fastmcp import FastMCP
 from pydantic import BaseModel
 
@@ -22,8 +26,8 @@ _COLLECTION_NAME = "telecom_kb"
 _KB_MISS_KEY = "pulseguard:kb:misses"
 
 # Lazy initialisation — avoids loading sentence-transformers at import time
-_chroma_client: Any | None = None
-_collection: Any | None = None
+_chroma_client: ClientAPI | None = None
+_collection: chromadb.Collection | None = None
 
 
 def _get_collection() -> chromadb.Collection:
@@ -35,7 +39,7 @@ def _get_collection() -> chromadb.Collection:
     _chroma_client = chromadb.PersistentClient(path=_CHROMA_PATH)
     _collection = _chroma_client.get_or_create_collection(
         name=_COLLECTION_NAME,
-        embedding_function=embed_fn,
+        embedding_function=embed_fn,  # type: ignore[arg-type]
         metadata={"hnsw:space": "cosine"},
     )
 
@@ -50,7 +54,9 @@ def _seed_collection(col: chromadb.Collection) -> None:
     with open(_KB_PATH) as f:
         data = json.load(f)
 
-    documents, metadatas, ids = [], [], []
+    documents: list[str] = []
+    metadatas: list[Mapping[str, str | int | float | bool]] = []
+    ids: list[str] = []
     for entry in data["entries"]:
         doc_text = (
             f"Category: {entry['category']}. "
@@ -121,17 +127,24 @@ async def search_kb(query: str, carrier: str, category: str = "") -> dict[str, A
             where=where if collection.count() > 0 else None,
         )
 
+        metadatas_result = results.get("metadatas")
+        metadatas_list: list[Mapping[str, str | int | float | bool]] = (
+            metadatas_result[0] if metadatas_result else []
+        )
+        distances_result = results.get("distances")
+        distances_list: list[float] = distances_result[0] if distances_result else []
+
         articles = []
         for i, doc_id in enumerate(results["ids"][0]):
-            meta = results["metadatas"][0][i]
-            distance = results["distances"][0][i] if results.get("distances") else 0.5
+            meta = metadatas_list[i]
+            distance = distances_list[i] if distances_list else 0.5
             articles.append(
                 KBArticle(
                     id=doc_id,
-                    category=meta["category"],
-                    carrier=meta["carrier"],
-                    tier=meta["tier"],
-                    title=meta["title"],
+                    category=str(meta["category"]),
+                    carrier=str(meta["carrier"]),
+                    tier=int(meta["tier"]),
+                    title=str(meta["title"]),
                     relevance_score=round(1.0 - distance, 3),
                 ).model_dump()
             )

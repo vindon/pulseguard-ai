@@ -12,6 +12,7 @@ from typing import Any, TypedDict
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from pulseguard.logging_config import get_logger
 from pulseguard.models.signals import RawSignal, ValidatedSignal
@@ -43,7 +44,7 @@ A post is INVALID if it is:
 
 
 class SentinelState(TypedDict):
-    raw_signal: dict
+    raw_signal: dict[str, Any]
     is_valid: bool
     validity_reason: str
     detected_carrier: str
@@ -214,7 +215,7 @@ def _should_continue(state: SentinelState) -> str:
     return "detect_carrier"
 
 
-def build_sentinel_graph() -> StateGraph:
+def build_sentinel_graph() -> CompiledStateGraph:
     graph = StateGraph(SentinelState)
     graph.add_node("validate_format", validate_format)
     graph.add_node("deduplicate", deduplicate)

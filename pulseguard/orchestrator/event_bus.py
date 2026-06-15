@@ -3,6 +3,8 @@ Redis Streams event bus.
 Agents publish events here; the orchestrator consumes and routes them.
 """
 
+from typing import Any
+
 from pulseguard.logging_config import get_logger
 from pulseguard.models.resolution import ResolutionRecord
 from pulseguard.models.signals import ValidatedSignal
@@ -56,7 +58,7 @@ async def publish_escalation_needed(signal_id: str, resolution: ResolutionRecord
 
 async def consume_stream(
     stream: str, consumer_group: str, consumer_name: str, count: int = 10
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     redis = get_async_redis()
     try:
         await redis.xgroup_create(stream, consumer_group, id="0", mkstream=True)
@@ -70,5 +72,5 @@ async def consume_stream(
     for _, entries in messages or []:
         for msg_id, data in entries:
             results.append({"id": msg_id, "data": data})
-            await redis.xack(stream, consumer_group, msg_id)
+            await redis.xack(stream, consumer_group, msg_id)  # type: ignore[no-untyped-call]
     return results

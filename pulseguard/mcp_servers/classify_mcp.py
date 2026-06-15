@@ -16,8 +16,8 @@ mcp = FastMCP("pulseguard-classify-mcp")
 _KB_PATH = Path(__file__).parent.parent / "kb" / "telecom_resolutions.json"
 
 # Load taxonomy at startup
-_kb_data: list[dict] = []
-_taxonomy: dict[str, dict] = {}  # category -> {tier, carriers}
+_kb_data: list[dict[str, Any]] = []
+_taxonomy: dict[str, dict[str, Any]] = {}  # category -> {tier, carriers}
 
 
 def _load_kb() -> None:

@@ -2,6 +2,7 @@ import json
 import os
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 _AUDIT_PATH = Path(os.getenv("AUDIT_LOG_PATH", "logs/audit.jsonl"))
 
@@ -15,7 +16,7 @@ def write_audit_entry(
     signal_id: str,
     action: str,
     trace_id: str,
-    extra: dict | None = None,
+    extra: dict[str, Any] | None = None,
 ) -> None:
     _ensure_log_dir()
     entry = {
