@@ -10,6 +10,7 @@ CARRIER_CONFIGS: dict[str, CarrierConfig] = {
         play_store_id="com.verizon.mymobilesecure",
         trustpilot_slug="verizon",
         subreddits=["verizon"],
+        youtube_channel_id="UCq5p3aOFCNkDFg3ZLNTULpw",
     ),
     "tmobile": CarrierConfig(
         name="tmobile",
@@ -20,6 +21,7 @@ CARRIER_CONFIGS: dict[str, CarrierConfig] = {
         play_store_id="com.tmobile.pr.mytmobile",
         trustpilot_slug="t-mobile",
         subreddits=["tmobile"],
+        youtube_channel_id="UCUFbGsk6-eRuy-Ts36BesXw",
     ),
     "att": CarrierConfig(
         name="att",
@@ -30,6 +32,7 @@ CARRIER_CONFIGS: dict[str, CarrierConfig] = {
         play_store_id="com.att.myWireless",
         trustpilot_slug="att",
         subreddits=["ATT"],
+        youtube_channel_id="UC0JO-FDmcF2lFP1l-rsmBWg",
     ),
 }
 

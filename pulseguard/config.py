@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     trustpilot_poll_interval_seconds: int = 86400
     trustpilot_request_delay_seconds: float = 1.0
 
+    # YouTube Data API v3
+    youtube_api_key: str = ""
+    youtube_poll_interval_seconds: int = 86400
+
+    # SerpAPI (Quora search)
+    serpapi_api_key: str = ""
+    quora_poll_interval_seconds: int = 86400
+
     # Notifications
     slack_webhook_url: str = ""
     notification_email: str = ""

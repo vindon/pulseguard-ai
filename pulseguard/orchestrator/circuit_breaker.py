@@ -94,5 +94,14 @@ class GlobalCircuitBreaker:
 global_circuit_breaker = GlobalCircuitBreaker()
 
 adapter_circuit_breakers: dict[str, CircuitBreaker] = {
-    name: CircuitBreaker(name) for name in ("x", "reddit", "google_play", "app_store", "trustpilot")
+    name: CircuitBreaker(name)
+    for name in (
+        "x",
+        "reddit",
+        "google_play",
+        "app_store",
+        "trustpilot",
+        "youtube",
+        "quora",
+    )
 }
