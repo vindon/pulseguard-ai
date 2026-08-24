@@ -1,0 +1,10 @@
+node_modules
+.next
+next-env.d.ts
+.DS_Store
+*.local
+.env
+*.tsbuildinfo
+/test-results/
+/playwright-report/
+/playwright/.cache/
