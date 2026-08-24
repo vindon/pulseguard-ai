@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 mcp = FastMCP("pulseguard-notify-mcp")
 
 _QUEUE_DEPTH_KEY = "pulseguard:escalation:queue_depth"
-_ACK_KEY_PREFIX = "pulseguard:escalation:ack:"
+_ESCALATION_KEY = "pulseguard:escalations"
 
 
 class ErrorResponse(BaseModel):
@@ -218,15 +218,28 @@ async def acknowledge_escalation(signal_id: str, ack_by: str) -> dict[str, Any]:
         ).model_dump()
     try:
         redis = get_async_redis()
-        ack_data = json.dumps(
-            {
+        brief_raw = await redis.hget(_ESCALATION_KEY, signal_id)
+        if not brief_raw:
+            return ErrorResponse(
+                error=f"Escalation {signal_id} not found", code="NOT_FOUND"
+            ).model_dump()
+
+        brief = EscalationBrief(**json.loads(brief_raw))
+        if brief.acknowledged:
+            # Idempotent: repeat-acknowledging an already-acked escalation
+            # must not decrement the queue depth a second time.
+            return {
                 "acknowledged": True,
-                "acknowledged_by": ack_by,
-                "acknowledged_at": datetime.now(UTC).isoformat(),
+                "signal_id": signal_id,
+                "acknowledged_by": brief.acknowledged_by,
             }
-        )
-        await redis.set(f"{_ACK_KEY_PREFIX}{signal_id}", ack_data)
+
+        brief.acknowledged = True
+        brief.acknowledged_by = ack_by
+        brief.acknowledged_at = datetime.now(UTC)
+        await redis.hset(_ESCALATION_KEY, signal_id, brief.model_dump_json())
         await redis.decr(_QUEUE_DEPTH_KEY)
+
         logger.info("escalation_acknowledged", signal_id=signal_id, ack_by=ack_by)
         return {"acknowledged": True, "signal_id": signal_id, "acknowledged_by": ack_by}
     except Exception as exc:

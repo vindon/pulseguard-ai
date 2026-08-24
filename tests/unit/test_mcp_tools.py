@@ -320,3 +320,72 @@ class TestOutputMcp:
 
         result = await list_resolved(hours=200)
         assert "error" in result
+
+
+# ── notify_mcp ───────────────────────────────────────────────────────────────
+
+
+class TestNotifyMcp:
+    @pytest.mark.asyncio
+    async def test_acknowledge_escalation_happy_path(self):
+        brief = _sample_brief()
+        brief["acknowledged"] = False
+        mock_redis = AsyncMock()
+        mock_redis.hget = AsyncMock(return_value=json.dumps(brief))
+        mock_redis.hset = AsyncMock()
+        mock_redis.decr = AsyncMock()
+        with patch("pulseguard.mcp_servers.notify_mcp.get_async_redis", return_value=mock_redis):
+            from pulseguard.mcp_servers.notify_mcp import acknowledge_escalation
+
+            result = await acknowledge_escalation("sig-001", "vinoth")
+
+        assert result == {"acknowledged": True, "signal_id": "sig-001", "acknowledged_by": "vinoth"}
+        # Must persist onto the *same* record other reads (list_escalations,
+        # the gateway's lifecycle endpoint) pull from, not a side key nothing
+        # else looks at.
+        mock_redis.hset.assert_awaited_once()
+        written_hash_key, written_signal_id, written_json = mock_redis.hset.call_args[0]
+        assert written_hash_key == "pulseguard:escalations"
+        assert written_signal_id == "sig-001"
+        written = json.loads(written_json)
+        assert written["acknowledged"] is True
+        assert written["acknowledged_by"] == "vinoth"
+        assert written["acknowledged_at"] is not None
+        mock_redis.decr.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_acknowledge_escalation_not_found(self):
+        mock_redis = AsyncMock()
+        mock_redis.hget = AsyncMock(return_value=None)
+        with patch("pulseguard.mcp_servers.notify_mcp.get_async_redis", return_value=mock_redis):
+            from pulseguard.mcp_servers.notify_mcp import acknowledge_escalation
+
+            result = await acknowledge_escalation("sig-missing", "vinoth")
+        assert result["code"] == "NOT_FOUND"
+
+    @pytest.mark.asyncio
+    async def test_acknowledge_escalation_missing_params(self):
+        from pulseguard.mcp_servers.notify_mcp import acknowledge_escalation
+
+        result = await acknowledge_escalation("", "vinoth")
+        assert result["code"] == "INVALID_PARAM"
+
+    @pytest.mark.asyncio
+    async def test_acknowledge_escalation_idempotent(self):
+        """Re-acknowledging an already-acked escalation must not decrement
+        the queue depth a second time."""
+        brief = _sample_brief()
+        brief["acknowledged"] = True
+        brief["acknowledged_by"] = "someone_else"
+        mock_redis = AsyncMock()
+        mock_redis.hget = AsyncMock(return_value=json.dumps(brief))
+        mock_redis.hset = AsyncMock()
+        mock_redis.decr = AsyncMock()
+        with patch("pulseguard.mcp_servers.notify_mcp.get_async_redis", return_value=mock_redis):
+            from pulseguard.mcp_servers.notify_mcp import acknowledge_escalation
+
+            result = await acknowledge_escalation("sig-001", "vinoth")
+
+        assert result["acknowledged_by"] == "someone_else"
+        mock_redis.hset.assert_not_awaited()
+        mock_redis.decr.assert_not_awaited()
