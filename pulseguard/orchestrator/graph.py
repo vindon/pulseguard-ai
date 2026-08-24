@@ -14,7 +14,6 @@ from pulseguard.adapters.quora_adapter import QuoraAdapter
 from pulseguard.adapters.reddit_adapter import RedditAdapter
 from pulseguard.adapters.trustpilot_adapter import TrustpilotAdapter
 from pulseguard.adapters.x_adapter import XAdapter
-from pulseguard.adapters.youtube_adapter import YouTubeAdapter
 from pulseguard.config import settings
 from pulseguard.logging_config import get_logger
 from pulseguard.models.signals import RawSignal, ValidatedSignal
@@ -35,7 +34,6 @@ class PulseGuardOrchestrator:
             "google_play": GooglePlayAdapter(),
             "app_store": AppStoreAdapter(),
             "trustpilot": TrustpilotAdapter(),
-            "youtube": YouTubeAdapter(),
             "quora": QuoraAdapter(),
         }
         self._running = False
@@ -59,7 +57,6 @@ class PulseGuardOrchestrator:
                 asyncio.create_task(self._poll_daily("google_play")),
                 asyncio.create_task(self._poll_daily("app_store")),
                 asyncio.create_task(self._poll_daily("trustpilot")),
-                asyncio.create_task(self._poll_daily("youtube")),
                 asyncio.create_task(self._poll_daily("quora")),
             ]
         else:
@@ -122,7 +119,6 @@ class PulseGuardOrchestrator:
             "google_play": 86400,
             "app_store": 86400,
             "trustpilot": settings.trustpilot_poll_interval_seconds,
-            "youtube": settings.youtube_poll_interval_seconds,
             "quora": settings.quora_poll_interval_seconds,
         }.get(adapter_name, 86400)
         while self._running:

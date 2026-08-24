@@ -101,7 +101,6 @@ adapter_circuit_breakers: dict[str, CircuitBreaker] = {
         "google_play",
         "app_store",
         "trustpilot",
-        "youtube",
         "quora",
     )
 }

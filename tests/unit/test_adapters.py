@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
@@ -11,8 +11,6 @@ from pulseguard.adapters.quora_adapter import QuoraAdapter
 from pulseguard.adapters.quora_adapter import _extract_author as _quora_extract_author
 from pulseguard.adapters.reddit_adapter import RedditAdapter, _is_relevant
 from pulseguard.adapters.x_adapter import XAdapter, _build_query
-from pulseguard.adapters.youtube_adapter import YouTubeAdapter
-from pulseguard.adapters.youtube_adapter import _is_relevant as _youtube_is_relevant
 from pulseguard.security.sanitise import hash_handle
 
 # ── helpers ────────────────────────────────────────────────────────────────
@@ -279,131 +277,6 @@ class TestFeedAdapterBase:
 
     def test_content_hash_unique(self):
         assert FeedAdapter.content_hash("content A") != FeedAdapter.content_hash("content B")
-
-
-# ── YouTube adapter ──────────────────────────────────────────────────────────
-
-
-def _youtube_comment_thread(
-    comment_id: str = "comment1",
-    text: str = "My verizon billing is all wrong, they overcharged me again",
-    author: str = "angry_yt_user",
-    published_at: str | None = None,
-    video_id: str = "vid123",
-) -> dict:
-    if published_at is None:
-        # Relative to "now" rather than a fixed date — the adapter filters
-        # anything older than a 24h cutoff, so a hardcoded past timestamp
-        # eventually goes stale and starts failing this test for a reason
-        # that has nothing to do with the adapter itself.
-        published_at = (datetime.now(UTC) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    return {
-        "id": comment_id,
-        "snippet": {
-            "videoId": video_id,
-            "totalReplyCount": 2,
-            "topLevelComment": {
-                "id": comment_id,
-                "snippet": {
-                    "authorDisplayName": author,
-                    "textOriginal": text,
-                    "textDisplay": text,
-                    "publishedAt": published_at,
-                    "likeCount": 3,
-                },
-            },
-        },
-    }
-
-
-def _youtube_response(items: list[dict] | None = None) -> dict:
-    return {"items": items if items is not None else []}
-
-
-_YOUTUBE_URL = "https://www.googleapis.com/youtube/v3/commentThreads"
-
-
-class TestYouTubeAdapter:
-    def test_is_relevant_complaint(self):
-        assert _youtube_is_relevant("billing overcharged me twice") is True
-
-    def test_is_relevant_no_complaint_keyword(self):
-        assert _youtube_is_relevant("great phone, love it") is False
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_fetch_returns_signals(self):
-        adapter = YouTubeAdapter()
-        respx.get(_YOUTUBE_URL).mock(
-            side_effect=[
-                httpx.Response(200, json=_youtube_response([_youtube_comment_thread()])),
-                httpx.Response(200, json=_youtube_response([])),
-                httpx.Response(200, json=_youtube_response([])),
-            ]
-        )
-
-        signals = await adapter.fetch()
-        assert len(signals) == 1
-        assert signals[0].source == "youtube"
-        assert signals[0].source_id == "comment1"
-        assert signals[0].carrier_hint == "verizon"
-        assert signals[0].author_handle == hash_handle("angry_yt_user")
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_fetch_no_results(self):
-        adapter = YouTubeAdapter()
-        respx.get(_YOUTUBE_URL).mock(return_value=httpx.Response(200, json=_youtube_response([])))
-
-        signals = await adapter.fetch()
-        assert signals == []
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_irrelevant_comments_filtered(self):
-        adapter = YouTubeAdapter()
-        bland_comment = _youtube_comment_thread(text="I love my new phone, works great")
-        respx.get(_YOUTUBE_URL).mock(
-            return_value=httpx.Response(200, json=_youtube_response([bland_comment]))
-        )
-
-        signals = await adapter.fetch()
-        assert signals == []
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_comments_older_than_cutoff_excluded(self):
-        adapter = YouTubeAdapter()
-        stale_comment = _youtube_comment_thread(published_at="2020-01-01T00:00:00Z")
-        respx.get(_YOUTUBE_URL).mock(
-            return_value=httpx.Response(200, json=_youtube_response([stale_comment]))
-        )
-
-        signals = await adapter.fetch()
-        assert signals == []
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_malformed_response_counts_as_error(self):
-        adapter = YouTubeAdapter()
-        respx.get(_YOUTUBE_URL).mock(return_value=httpx.Response(403, json={"error": "quota"}))
-
-        signals = await adapter.fetch()
-        assert signals == []
-        assert adapter._consecutive_errors == 3  # one failure per configured carrier
-
-    @pytest.mark.asyncio
-    async def test_health_check_healthy_by_default(self):
-        adapter = YouTubeAdapter()
-        health = await adapter.health_check()
-        assert health.status == "HEALTHY"
-
-    @pytest.mark.asyncio
-    async def test_health_check_down_after_five_errors(self):
-        adapter = YouTubeAdapter()
-        adapter._consecutive_errors = 5
-        health = await adapter.health_check()
-        assert health.status == "DOWN"
 
 
 # ── Quora adapter ────────────────────────────────────────────────────────────

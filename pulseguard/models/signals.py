@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 class RawSignal(BaseModel):
     signal_id: str
-    source: Literal["x", "reddit", "google_play", "app_store", "trustpilot", "youtube", "quora"]
+    source: Literal["x", "reddit", "google_play", "app_store", "trustpilot", "quora"]
     source_id: str
     carrier_hint: str | None = None
     author_handle: str  # SHA-256 hashed before storage

@@ -41,7 +41,7 @@ class TestRawSignal:
         assert sig.adapter_metadata == {}
 
     def test_all_sources_accepted(self):
-        for src in ("x", "reddit", "google_play", "app_store", "trustpilot", "youtube", "quora"):
+        for src in ("x", "reddit", "google_play", "app_store", "trustpilot", "quora"):
             sig = RawSignal(**_raw_signal(source=src))
             assert sig.source == src
 

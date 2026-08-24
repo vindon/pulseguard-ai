@@ -23,4 +23,3 @@ class CarrierConfig(BaseModel):
     play_store_id: str | None = None  # Google Play package name
     trustpilot_slug: str | None = None
     subreddits: list[str] = []
-    youtube_channel_id: str | None = None  # Official YouTube channel ID
