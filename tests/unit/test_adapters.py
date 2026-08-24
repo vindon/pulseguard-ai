@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
@@ -288,9 +288,15 @@ def _youtube_comment_thread(
     comment_id: str = "comment1",
     text: str = "My verizon billing is all wrong, they overcharged me again",
     author: str = "angry_yt_user",
-    published_at: str = "2026-07-14T09:00:00Z",
+    published_at: str | None = None,
     video_id: str = "vid123",
 ) -> dict:
+    if published_at is None:
+        # Relative to "now" rather than a fixed date — the adapter filters
+        # anything older than a 24h cutoff, so a hardcoded past timestamp
+        # eventually goes stale and starts failing this test for a reason
+        # that has nothing to do with the adapter itself.
+        published_at = (datetime.now(UTC) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
     return {
         "id": comment_id,
         "snippet": {
