@@ -1,3 +1,4 @@
+import asyncio
 import json
 import uuid
 from datetime import UTC, datetime
@@ -16,6 +17,38 @@ from pulseguard.security.sanitise import hash_handle, sanitise_pii
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1")
+
+
+async def _safe_process_signal(signal: RawSignal, trace_id: str) -> None:
+    """Background-task wrapper around sentinel.process_signal for manual
+    ingest. The orchestrator's own scheduled polling loops always await
+    process_signal inside a try/except that logs and trips the adapter's
+    circuit breaker (orchestrator/graph.py's _poll_x/_poll_reddit/etc.) —
+    this endpoint instead fired it via a bare asyncio.create_task with no
+    handler at all, so any failure (a bad Anthropic response, a Redis
+    hiccup) surfaced only as an unlogged "Task exception was never
+    retrieved" warning while the caller had already been told 200/queued.
+    Mirrors the orchestrator's own error handling instead of dropping it.
+    """
+    from pulseguard.agents.sentinel import process_signal
+    from pulseguard.security.audit import write_audit_entry
+
+    try:
+        await process_signal(signal, trace_id)
+    except Exception as exc:
+        logger.error(
+            "manual_ingest_processing_failed",
+            signal_id=signal.signal_id,
+            trace_id=trace_id,
+            error=str(exc),
+        )
+        write_audit_entry(
+            "sentinel",
+            signal.signal_id,
+            "signal_processing_failed",
+            trace_id,
+            {"reason": str(exc)},
+        )
 
 
 async def _build_lifecycle(signal_id: str) -> dict[str, Any]:
@@ -146,12 +179,8 @@ async def ingest_signal(request: Request, req: IngestRequest) -> dict[str, Any]:
         adapter_metadata=req.adapter_metadata,
     )
 
-    from pulseguard.agents.sentinel import process_signal
-
     trace_id = str(uuid.uuid4())
-    import asyncio
-
-    asyncio.create_task(process_signal(signal, trace_id))
+    asyncio.create_task(_safe_process_signal(signal, trace_id))
 
     from pulseguard.gateway.metrics import signals_ingested
 
