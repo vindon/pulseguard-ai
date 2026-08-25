@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: pulseguard-gateway
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: ENVIRONMENT
+        value: production
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: pulseguard-redis
+          property: connectionString
+      - key: PULSEGUARD_API_KEY
+        generateValue: true
+      - key: LANGCHAIN_TRACING_V2
+        value: "false"
+      - key: MONITORED_CARRIERS
+        value: verizon,tmobile,att
+      # Set for real functionality after the first deploy (Dashboard →
+      # pulseguard-gateway → Environment) — free-tier secrets aren't
+      # something a Blueprint should carry in git:
+      #   ANTHROPIC_API_KEY   (required — powers all 4 agents)
+      #   SLACK_WEBHOOK_URL, SENDGRID_API_KEY  (optional — escalation notifications)
+      #   REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, X_BEARER_TOKEN, SERPAPI_API_KEY
+      #     (optional — each adapter degrades gracefully / just skips its
+      #     source if unset, so none of these block startup)
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+keyvalues:
+  - name: pulseguard-redis
+    plan: free
+    region: oregon
+    maxmemoryPolicy: allkeys_lru
+    ipAllowList: []
