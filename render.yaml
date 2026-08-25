@@ -30,6 +30,11 @@ services:
         value: "false"
       - key: MONITORED_CARRIERS
         value: verizon,tmobile,att
+      # No browser calls this API directly — the frontend's server-side
+      # proxy holds PULSEGUARD_API_KEY and isn't subject to CORS — so this
+      # is defense-in-depth, not something the working app depends on.
+      - key: ALLOWED_ORIGINS
+        value: https://pulseguard-console.vercel.app
       # Set for real functionality after the first deploy (Dashboard →
       # pulseguard-gateway → Environment) — free-tier secrets aren't
       # something a Blueprint should carry in git:
