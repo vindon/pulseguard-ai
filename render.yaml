@@ -1,4 +1,11 @@
 services:
+  - type: keyvalue
+    name: pulseguard-redis
+    plan: free
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
   - type: web
     name: pulseguard-gateway
     runtime: docker
@@ -33,10 +40,3 @@ services:
       #     source if unset, so none of these block startup)
       - key: ANTHROPIC_API_KEY
         sync: false
-
-keyvalues:
-  - name: pulseguard-redis
-    plan: free
-    region: oregon
-    maxmemoryPolicy: allkeys_lru
-    ipAllowList: []
