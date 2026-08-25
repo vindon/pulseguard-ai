@@ -25,6 +25,33 @@ from pulseguard.redis_client import get_async_redis
 logger = get_logger(__name__)
 
 
+async def _dispatch_safely(coro: Any, agent: str, signal_id: str, trace_id: str) -> None:
+    """Wrapper for the downstream-agent tasks each stream consumer below
+    fires via asyncio.create_task. A task scheduled that way runs
+    independently of the consumer loop's own try/except — by the time a
+    stream message has been read, an unwrapped failure inside
+    process_validated_signal/process_triage_report/process_escalation
+    was previously silent except for an unlogged "Task exception was
+    never retrieved" warning, and the signal just vanished with no audit
+    trail (found via the /signals/ingest version of this same gap).
+    """
+    from pulseguard.security.audit import write_audit_entry
+
+    try:
+        await coro
+    except Exception as exc:
+        logger.error(
+            "agent_dispatch_failed",
+            agent=agent,
+            signal_id=signal_id,
+            trace_id=trace_id,
+            error=str(exc),
+        )
+        write_audit_entry(
+            agent, signal_id, f"{agent}_dispatch_failed", trace_id, {"reason": str(exc)}
+        )
+
+
 class PulseGuardOrchestrator:
     def __init__(self) -> None:
         redis = get_async_redis()
@@ -157,7 +184,14 @@ class PulseGuardOrchestrator:
                     trace_id = str(uuid.uuid4())
                     from pulseguard.agents.triage import process_validated_signal
 
-                    asyncio.create_task(process_validated_signal(validated, trace_id))
+                    asyncio.create_task(
+                        _dispatch_safely(
+                            process_validated_signal(validated, trace_id),
+                            "triage",
+                            validated.signal_id,
+                            trace_id,
+                        )
+                    )
             except Exception as exc:
                 logger.error("consume_validated_error", error=str(exc))
                 await asyncio.sleep(5)
@@ -185,12 +219,24 @@ class PulseGuardOrchestrator:
                         from pulseguard.agents.resolver import process_triage_report
 
                         asyncio.create_task(
-                            process_triage_report(report, validated_signal, trace_id)
+                            _dispatch_safely(
+                                process_triage_report(report, validated_signal, trace_id),
+                                "resolver",
+                                report.signal_id,
+                                trace_id,
+                            )
                         )
                     else:
                         from pulseguard.agents.escalation import process_escalation
 
-                        asyncio.create_task(process_escalation(report, validated_signal, trace_id))
+                        asyncio.create_task(
+                            _dispatch_safely(
+                                process_escalation(report, validated_signal, trace_id),
+                                "escalation",
+                                report.signal_id,
+                                trace_id,
+                            )
+                        )
             except Exception as exc:
                 logger.error("consume_triage_error", error=str(exc))
                 await asyncio.sleep(5)
@@ -218,8 +264,16 @@ class PulseGuardOrchestrator:
                         from pulseguard.agents.escalation import process_escalation
 
                         asyncio.create_task(
-                            process_escalation(
-                                report, validated_signal, trace_id, attempted_resolution=attempted
+                            _dispatch_safely(
+                                process_escalation(
+                                    report,
+                                    validated_signal,
+                                    trace_id,
+                                    attempted_resolution=attempted,
+                                ),
+                                "escalation",
+                                signal_id,
+                                trace_id,
                             )
                         )
             except Exception as exc:
