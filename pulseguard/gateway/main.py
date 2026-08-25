@@ -9,20 +9,19 @@ load_dotenv()  # Load .env into os.environ before any SDK clients are instantiat
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from starlette.responses import Response
 
+from pulseguard.config import settings
 from pulseguard.gateway.dashboard import router as dashboard_router
+from pulseguard.gateway.limiter import limiter
 from pulseguard.gateway.routes import router
 from pulseguard.logging_config import configure_logging, get_logger
 from pulseguard.redis_client import close_redis
 
 configure_logging()
 logger = get_logger(__name__)
-
-limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager
@@ -51,7 +50,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # ty
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    # No browser is meant to call this API directly — the frontend's
+    # server-side proxy holds the API key and isn't subject to CORS at all.
+    # This only matters as defense-in-depth against a browser context that
+    # somehow obtained a key; keep it scoped to known frontend origins
+    # instead of "*".
+    allow_origins=settings.allowed_origins_list,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )

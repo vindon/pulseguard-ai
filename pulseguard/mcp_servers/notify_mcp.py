@@ -32,39 +32,44 @@ def _severity_emoji(severity: str) -> str:
 
 def _format_slack_message(brief: EscalationBrief) -> dict[str, Any]:
     emoji = _severity_emoji(brief.severity)
-    return {
-        "text": f"{emoji} PulseGuard Escalation: {brief.severity} — {brief.carrier.upper()} — {brief.category}",
-        "blocks": [
-            {
-                "type": "header",
-                "text": {
-                    "type": "plain_text",
-                    "text": f"{emoji} {brief.severity} Escalation: {brief.carrier.upper()}",
-                },
+    blocks: list[dict[str, Any]] = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": f"{emoji} {brief.severity} Escalation: {brief.carrier.upper()}",
             },
-            {
-                "type": "section",
-                "fields": [
-                    {"type": "mrkdwn", "text": f"*Category:*\n{brief.category}"},
-                    {"type": "mrkdwn", "text": f"*Platform:*\n{brief.source_platform}"},
-                    {"type": "mrkdwn", "text": f"*Sentiment:*\n{brief.sentiment_score:.2f}"},
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Churn Risk:*\n{'⚠️ YES' if brief.churn_risk else 'No'}",
-                    },
-                ],
-            },
-            {
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": f"*Summary:*\n{brief.summary}"},
-            },
-            {
-                "type": "section",
-                "text": {
+        },
+        {
+            "type": "section",
+            "fields": [
+                {"type": "mrkdwn", "text": f"*Category:*\n{brief.category}"},
+                {"type": "mrkdwn", "text": f"*Platform:*\n{brief.source_platform}"},
+                {"type": "mrkdwn", "text": f"*Sentiment:*\n{brief.sentiment_score:.2f}"},
+                {
                     "type": "mrkdwn",
-                    "text": f"*Recommended Action:*\n{brief.recommended_action}",
+                    "text": f"*Churn Risk:*\n{'⚠️ YES' if brief.churn_risk else 'No'}",
                 },
+            ],
+        },
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": f"*Summary:*\n{brief.summary}"},
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*Recommended Action:*\n{brief.recommended_action}",
             },
+        },
+    ]
+    # Slack buttons require an absolute http(s) URL — original_post_url is
+    # attacker-reachable (it's carried straight through from the ingested
+    # signal), so a non-http(s) scheme here gets dropped rather than handed
+    # to Slack as-is.
+    if brief.original_post_url.startswith(("http://", "https://")):
+        blocks.append(
             {
                 "type": "actions",
                 "elements": [
@@ -75,17 +80,22 @@ def _format_slack_message(brief: EscalationBrief) -> dict[str, Any]:
                         "action_id": "view_post",
                     }
                 ],
-            },
-            {
-                "type": "context",
-                "elements": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"Signal ID: `{brief.signal_id}` | Trace: `{brief.escalation_trace_id}`",
-                    }
-                ],
-            },
-        ],
+            }
+        )
+    blocks.append(
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"Signal ID: `{brief.signal_id}` | Trace: `{brief.escalation_trace_id}`",
+                }
+            ],
+        }
+    )
+    return {
+        "text": f"{emoji} PulseGuard Escalation: {brief.severity} — {brief.carrier.upper()} — {brief.category}",
+        "blocks": blocks,
     }
 
 

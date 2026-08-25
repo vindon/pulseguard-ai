@@ -3,10 +3,11 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from pydantic import BaseModel, Field
 
 from pulseguard.gateway.auth import require_api_key
+from pulseguard.gateway.limiter import limiter
 from pulseguard.logging_config import get_logger
 from pulseguard.models.signals import RawSignal
 from pulseguard.redis_client import get_async_redis
@@ -21,18 +22,10 @@ async def _build_lifecycle(signal_id: str) -> dict[str, Any]:
     """Join all Redis hashes to produce a full signal lifecycle record."""
     redis = get_async_redis()
     validated_raw, triage_raw, resolution_raw, escalation_raw = (
-        await redis.hmget(
-            *[
-                ("pulseguard:validated_signals", signal_id),
-            ]
-        )
-        if False
-        else (
-            await redis.hget("pulseguard:validated_signals", signal_id),
-            await redis.hget("pulseguard:triage_reports", signal_id),
-            await redis.hget("pulseguard:resolutions", signal_id),
-            await redis.hget("pulseguard:escalations", signal_id),
-        )
+        await redis.hget("pulseguard:validated_signals", signal_id),
+        await redis.hget("pulseguard:triage_reports", signal_id),
+        await redis.hget("pulseguard:resolutions", signal_id),
+        await redis.hget("pulseguard:escalations", signal_id),
     )
 
     result: dict[str, Any] = {"signal_id": signal_id}
@@ -112,12 +105,16 @@ async def _get_all_signal_ids(redis: Any) -> list[str]:
 
 class IngestRequest(BaseModel):
     source: str
-    source_id: str
-    author_handle: str
-    content: str
-    url: str
+    source_id: str = Field(max_length=500)
+    author_handle: str = Field(max_length=500)
+    # Bounded well above any real post length on every supported platform
+    # (Reddit's own cap is 40,000) — an unauthenticated length here would
+    # let one ingest call balloon into an arbitrarily expensive LLM request
+    # across all four agents.
+    content: str = Field(max_length=40_000)
+    url: str = Field(max_length=2000)
     posted_at: datetime
-    carrier_hint: str | None = None
+    carrier_hint: str | None = Field(default=None, max_length=100)
     adapter_metadata: dict[str, Any] = {}
 
 
@@ -129,8 +126,13 @@ class AckRequest(BaseModel):
 
 
 @router.post("/signals/ingest", dependencies=[Depends(require_api_key)])
-async def ingest_signal(req: IngestRequest) -> dict[str, Any]:
-    """Manually ingest a signal (for testing and integration)."""
+@limiter.limit("20/minute")
+async def ingest_signal(request: Request, req: IngestRequest) -> dict[str, Any]:
+    """Manually ingest a signal (for testing and integration).
+
+    Rate-limited: each call fans out to all four LLM agents, so this is
+    also the API's main cost/abuse surface, not just a traffic concern.
+    """
     signal = RawSignal(
         signal_id=str(uuid.uuid4()),
         source=req.source,

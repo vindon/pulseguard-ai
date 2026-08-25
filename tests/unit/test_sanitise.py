@@ -17,6 +17,12 @@ class TestSanitisePii:
         assert "4111111111111111" not in result
         assert "[CARD]" in result
 
+    def test_credit_card_spaced_and_dashed_redacted(self):
+        for card in ("4111 1111 1111 1111", "4111-1111-1111-1111", "5500 0000 0000 0004"):
+            result = sanitise_pii(f"my card is {card} and it got charged")
+            assert card not in result
+            assert "[CARD]" in result
+
     def test_ssn_redacted(self):
         result = sanitise_pii("SSN 123-45-6789 was used")
         assert "123-45-6789" not in result

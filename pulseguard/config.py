@@ -10,7 +10,11 @@ class Settings(BaseSettings):
     # LangSmith
     langchain_api_key: str = ""
     langchain_project: str = "pulseguard-ai"
-    langchain_tracing_v2: bool = True
+    # Off by default: tracing sends node/tool inputs and outputs (already
+    # PII-redacted, but still real customer-issue content) to a third-party
+    # service. Require an explicit opt-in rather than silently starting to
+    # export data the moment someone sets an unrelated LANGCHAIN_API_KEY.
+    langchain_tracing_v2: bool = False
 
     # X / Twitter
     x_bearer_token: str = ""
@@ -45,6 +49,10 @@ class Settings(BaseSettings):
 
     # FastAPI
     pulseguard_api_key: str = ""
+    # Comma-separated origins allowed to call the API from a browser (CORS).
+    # Empty means no browser origin is trusted — the intended path is always
+    # the frontend's own server-side proxy, which isn't subject to CORS at all.
+    allowed_origins: str = ""
 
     # Carriers
     monitored_carriers: str = "verizon,tmobile,att"
@@ -57,6 +65,15 @@ class Settings(BaseSettings):
     @property
     def carrier_list(self) -> list[str]:
         return [c.strip() for c in self.monitored_carriers.split(",") if c.strip()]
+
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        configured = [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+        if configured:
+            return configured
+        if self.environment != "production":
+            return ["http://localhost:3000", "http://localhost:3100"]
+        return []
 
 
 settings = Settings()

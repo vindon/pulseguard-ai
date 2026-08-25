@@ -26,6 +26,12 @@ RUN uv sync --no-dev
 
 RUN mkdir -p logs chroma_db
 
+# Don't run the process as root — a container escape or dependency RCE
+# would otherwise hand an attacker root inside the image for free.
+RUN useradd --create-home --uid 1000 pulseguard \
+    && chown -R pulseguard:pulseguard /app
+USER pulseguard
+
 EXPOSE 8000
 
 # Shell form (not exec-array) so $PORT is substituted at container start —
