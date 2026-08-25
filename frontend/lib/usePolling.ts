@@ -8,12 +8,31 @@ interface PollingState<T> {
   loading: boolean;
 }
 
+// Dispatched after any write that should be reflected everywhere
+// immediately (e.g. acknowledging an escalation) rather than waiting for
+// each poller's own interval — the sidebar badge alone polls every 20s,
+// which would otherwise make an acknowledged escalation look stuck.
+const REFRESH_EVENT = 'pulseguard:refresh';
+
+export function requestRefresh() {
+  window.dispatchEvent(new Event(REFRESH_EVENT));
+}
+
 // Polls a proxy endpoint on an interval. Used instead of a WebSocket/SSE
 // connection because the FastAPI gateway doesn't currently expose either —
 // this is the pragmatic choice for a portfolio-showcase build, not a
 // production-scale operations tool serving many concurrent viewers.
-export function usePolling<T>(path: string, intervalMs = 5000): PollingState<T> {
-  const [state, setState] = useState<PollingState<T>>({ data: null, error: null, loading: true });
+//
+// `initialData`, when given, comes from the page's Server Component (which
+// fetched it directly via lib/api.ts before this component ever mounted) so
+// the first paint shows real data instead of a loading flash — polling then
+// takes over seamlessly from there.
+export function usePolling<T>(path: string, intervalMs = 5000, initialData: T | null = null): PollingState<T> {
+  const [state, setState] = useState<PollingState<T>>({
+    data: initialData,
+    error: null,
+    loading: initialData === null,
+  });
   const pathRef = useRef(path);
   pathRef.current = path;
 
@@ -39,9 +58,11 @@ export function usePolling<T>(path: string, intervalMs = 5000): PollingState<T> 
 
     tick();
     const id = setInterval(tick, intervalMs);
+    window.addEventListener(REFRESH_EVENT, tick);
     return () => {
       cancelled = true;
       clearInterval(id);
+      window.removeEventListener(REFRESH_EVENT, tick);
     };
   }, [path, intervalMs]);
 

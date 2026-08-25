@@ -16,8 +16,12 @@ function avgTriageSeconds(signals: PipelineSignalsResponse['signals']): number |
   return deltas.reduce((a, b) => a + b, 0) / deltas.length;
 }
 
-export default function OverviewStats() {
-  const { data } = usePolling<PipelineSignalsResponse>('/pipeline/signals?hours=24', 5000);
+export default function OverviewStats({
+  initialData = null,
+}: {
+  initialData?: PipelineSignalsResponse | null;
+}) {
+  const { data } = usePolling<PipelineSignalsResponse>('/pipeline/signals?hours=24', 5000, initialData);
   const signals = data?.signals ?? [];
 
   const open = signals.filter((s) => s.stage !== 'resolved').length;

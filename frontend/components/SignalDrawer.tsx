@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { SignalLifecycle } from '@/lib/types';
 import { relativeTime, sourceLabel } from '@/lib/format';
+import { requestRefresh } from '@/lib/usePolling';
 import Badge, { severityTone, severityLabel } from './Badge';
 import { CloseIcon, CheckIcon, DownloadIcon, AlertTriangleIcon } from './icons';
 
@@ -28,6 +29,10 @@ export default function SignalDrawer({
       });
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       setAcked(true);
+      // Every active poller (sidebar badge, escalations list, queue table)
+      // picks this signal up on its next tick instead of waiting out its
+      // own interval — the sidebar alone polls every 20s.
+      requestRefresh();
     } catch (err) {
       setAckError(err instanceof Error ? err.message : 'Acknowledge failed');
     } finally {

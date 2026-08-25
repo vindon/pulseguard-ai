@@ -41,20 +41,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <div className="nav-section-label">Workspace</div>
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const active = pathname === item.href;
-          return (
-            <Link key={item.href} href={item.href} className={`nav-item${active ? ' active' : ''}`}>
-              <Icon />
-              <span className="nav-label">{item.label}</span>
-              {item.badgeKey === 'escalations' && unacknowledged > 0 && (
-                <span className="nav-badge">{unacknowledged}</span>
-              )}
-            </Link>
-          );
-        })}
+        <nav aria-label="Primary">
+          <div className="nav-section-label">Workspace</div>
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const active = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href} className={`nav-item${active ? ' active' : ''}`}>
+                <Icon />
+                <span className="nav-label">{item.label}</span>
+                {item.badgeKey === 'escalations' && unacknowledged > 0 && (
+                  <span className="nav-badge">{unacknowledged}</span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
 
         <div className="sidebar-footer">
           <div className="sidebar-user">
@@ -68,8 +70,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="main">
-        <div className="topbar">
-          <div className="search">
+        <header className="topbar">
+          <div className="search" role="search">
             <SearchIcon />
             Search signals, carriers, categories…
           </div>
@@ -79,9 +81,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               {unacknowledged > 0 && <span className="dot-alert" />}
             </div>
           </div>
-        </div>
+        </header>
 
-        {children}
+        <main>{children}</main>
       </div>
     </div>
   );

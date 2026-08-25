@@ -23,14 +23,22 @@ export default function QueueTable({
   hours = 24,
   limit,
   showFilters = false,
+  initialData = null,
 }: {
   hours?: number;
   limit?: number;
   showFilters?: boolean;
+  initialData?: PipelineSignalsResponse | null;
 }) {
   const [source, setSource] = useState<string | null>(null);
   const path = `/pipeline/signals?hours=${hours}${source ? `&source=${source}` : ''}`;
-  const { data, error, loading } = usePolling<PipelineSignalsResponse>(path, 5000);
+  // initialData was fetched server-side for the unfiltered path — only
+  // valid as the first-paint value while no source filter is applied yet.
+  const { data, error, loading } = usePolling<PipelineSignalsResponse>(
+    path,
+    5000,
+    source === null ? initialData : null
+  );
   const [selected, setSelected] = useState<SignalLifecycle | null>(null);
 
   const signals = (data?.signals ?? []).slice(0, limit);
