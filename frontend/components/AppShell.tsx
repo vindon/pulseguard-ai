@@ -139,7 +139,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="ml-auto flex items-center gap-2.5">
             <DropdownMenu>
-              <DropdownMenuTrigger className="relative flex h-[30px] w-[30px] items-center justify-center rounded-lg text-muted hover:bg-neutral-tint">
+              <DropdownMenuTrigger
+                aria-label="Notifications"
+                className="relative flex h-[30px] w-[30px] items-center justify-center rounded-lg text-muted hover:bg-neutral-tint"
+              >
                 <Bell className="h-[15px] w-[15px]" />
                 {unacknowledged > 0 && (
                   <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full border-[1.5px] border-surface bg-critical" />
