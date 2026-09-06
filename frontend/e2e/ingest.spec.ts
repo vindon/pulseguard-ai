@@ -11,7 +11,7 @@ test.describe('Send test signal', () => {
 
     await page.getByRole('button', { name: 'Send to the pipeline' }).click();
 
-    const success = page.locator('.callout.-success');
+    const success = page.getByTestId('callout-success');
     await expect(success).toBeVisible();
     await expect(success).toContainText('Queued as');
     await expect(success.getByRole('link', { name: 'signal queue' })).toHaveAttribute('href', '/queue');
