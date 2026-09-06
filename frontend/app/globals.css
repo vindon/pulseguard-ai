@@ -102,6 +102,25 @@
   --font-display: var(--font-jakarta), -apple-system, sans-serif;
   --font-sans: var(--font-inter), -apple-system, sans-serif;
   --font-mono: var(--font-jetbrains), 'SF Mono', monospace;
+
+  /* shadcn/ui primitives (Task 2) read these conventional token names —
+     mapped onto Task 1's palette rather than shadcn's own defaults, since
+     this project has no --card/--popover/etc. of its own to preserve. */
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --color-primary: var(--brand);
+  --color-primary-foreground: var(--bg);
+  --color-secondary: var(--neutral-tint);
+  --color-secondary-foreground: var(--ink);
+  --color-destructive: var(--critical);
+  --color-accent: var(--neutral-tint);
+  --color-accent-foreground: var(--ink);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--ink);
+  --color-muted: var(--neutral-tint);
+  --color-muted-foreground: var(--muted);
+  --color-input: var(--border);
+  --color-ring: var(--brand);
 }
 
 *{box-sizing:border-box;}
