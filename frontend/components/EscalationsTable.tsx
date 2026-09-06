@@ -6,7 +6,9 @@ import { usePolling } from '@/lib/usePolling';
 import { relativeTime, carrierColor, carrierInitial } from '@/lib/format';
 import Badge, { severityTone, severityLabel } from './Badge';
 import SignalDrawer from './SignalDrawer';
-import { EmptyIcon } from './icons';
+import { Inbox } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Button } from '@/components/ui/button';
 
 const PRIORITIES = [
   { value: null, label: 'All priorities' },
@@ -55,65 +57,82 @@ export default function EscalationsTable({
 
   return (
     <>
-      <div className="filter-row">
-        {PRIORITIES.map((p) => (
-          <button
-            key={p.label}
-            type="button"
-            className={`filter-pill${priority === p.value ? ' active' : ''}`}
-            onClick={() => setPriority(p.value)}
-          >
-            {p.label}
-          </button>
-        ))}
-        <div className="filter-spacer" />
-        <button
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <ToggleGroup
+          type="single"
+          value={priority ?? 'all'}
+          onValueChange={(v) => setPriority(v === 'all' || !v ? null : v)}
+          className="flex-wrap justify-start gap-2"
+        >
+          {PRIORITIES.map((p) => (
+            <ToggleGroupItem
+              key={p.label}
+              value={p.value ?? 'all'}
+              className="rounded-full border border-border px-3 py-1.5 text-[12.5px] font-semibold text-muted data-[state=on]:bg-ink data-[state=on]:text-bg"
+            >
+              {p.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        <div className="flex-1" />
+        <Button
           type="button"
-          className={`filter-pill${showAcked ? ' active' : ''}`}
+          variant="outline"
+          className="rounded-full px-3 py-1.5 text-[12.5px] font-semibold"
           onClick={() => setShowAcked((v) => !v)}
         >
           {showAcked ? 'Showing all' : 'Unacknowledged only'}
-        </button>
+        </Button>
       </div>
 
-      <div className="panel">
-        <div className="esc-head">
+      <div className="overflow-hidden rounded-[13px] border border-border bg-surface shadow-[var(--shadow-card)]">
+        <div className="grid grid-cols-[28px_1.4fr_110px_130px_100px] gap-3.5 border-b border-border px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-muted">
           <div></div>
           <div>Escalation</div>
           <div>Carrier</div>
           <div>Priority</div>
-          <div style={{ textAlign: 'right' }}>Raised</div>
+          <div className="text-right">Raised</div>
         </div>
 
-        {loading && briefs.length === 0 && <div className="empty-state">Loading escalations…</div>}
+        {loading && briefs.length === 0 && (
+          <div data-testid="empty-state" className="p-14 text-center text-muted">
+            Loading escalations…
+          </div>
+        )}
 
         {!loading && !error && briefs.length === 0 && (
-          <div className="empty-state">
-            <EmptyIcon />
-            <div>
-              {showAcked ? 'No escalations match these filters.' : 'Nothing unacknowledged right now.'}
-            </div>
+          <div data-testid="empty-state" className="p-14 text-center text-muted">
+            <Inbox className="mx-auto mb-3 h-8 w-8 opacity-50" />
+            <div>{showAcked ? 'No escalations match these filters.' : 'Nothing unacknowledged right now.'}</div>
           </div>
         )}
 
         {error && briefs.length === 0 && (
-          <div className="empty-state">Couldn&apos;t reach the gateway — {error}</div>
+          <div data-testid="empty-state" className="p-14 text-center text-muted">
+            Couldn&apos;t reach the gateway — {error}
+          </div>
         )}
 
         {briefs.map((brief) => (
           <button
             key={brief.signal_id}
             type="button"
-            className={`esc-row${selectedId === brief.signal_id ? ' -selected' : ''}`}
+            data-testid="escalation-row"
+            className={`grid w-full grid-cols-[28px_1.4fr_110px_130px_100px] items-center gap-3.5 border-b border-border px-4 py-[11px] text-left text-[12.5px] last:border-b-0 hover:bg-neutral-tint ${
+              selectedId === brief.signal_id ? 'bg-gradient-to-r from-brand-tint to-jewel-violet-tint' : ''
+            }`}
             onClick={() => openSignal(brief.signal_id)}
           >
-            <div className="carrier-avatar" style={{ background: carrierColor(brief.carrier) }}>
+            <div
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+              style={{ background: carrierColor(brief.carrier) }}
+            >
               {carrierInitial(brief.carrier)}
             </div>
-            <div className="ticket-main">
-              <div className="ticket-title">{brief.summary}</div>
-              <div className="ticket-meta">
-                {brief.category} · <span className="mono">{brief.signal_id.slice(0, 8)}</span>
+            <div className="min-w-0">
+              <div className="truncate text-[12.5px] font-semibold">{brief.summary}</div>
+              <div className="mt-0.5 text-[10.5px] text-muted">
+                {brief.category} · <span className="font-mono">{brief.signal_id.slice(0, 8)}</span>
               </div>
             </div>
             <div>
@@ -130,7 +149,7 @@ export default function EscalationsTable({
                 </Badge>
               )}
             </div>
-            <div className="time-cell">{relativeTime(brief.escalated_at)}</div>
+            <div className="text-right text-[12px] tabular-nums text-muted">{relativeTime(brief.escalated_at)}</div>
           </button>
         ))}
       </div>
