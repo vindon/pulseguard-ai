@@ -18,11 +18,13 @@ export default async function StatusPage() {
   const { adapters, orchestrator } = await getInitialStatus();
 
   return (
-    <div className="content">
-      <div className="content-head">
+    <div className="p-7 pb-12">
+      <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h1 className="page-title display">Adapter status</h1>
-          <div className="page-sub">Feed health, circuit breakers, and orchestrator state</div>
+          <h1 data-testid="page-title" className="font-display text-[20px] font-extrabold tracking-tight">
+            Adapter status
+          </h1>
+          <div className="mt-0.5 text-[12px] text-muted">Feed health, circuit breakers, and orchestrator state</div>
         </div>
       </div>
       <StatusPanel initialAdapters={adapters} initialOrchestrator={orchestrator} />
