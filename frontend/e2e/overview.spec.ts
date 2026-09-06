@@ -23,6 +23,6 @@ test.describe('Overview', () => {
 
   test('sidebar shows the unacknowledged escalation badge', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('.nav-badge')).toHaveText('1');
+    await expect(page.getByTestId('nav-badge')).toHaveText('1');
   });
 });
