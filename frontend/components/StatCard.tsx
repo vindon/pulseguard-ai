@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 type IconTone = 'violet' | 'critical' | 'success' | 'teal';
+type SubTone = 'muted' | 'success' | 'critical';
 
 const ICON_TONE_CLASSES: Record<IconTone, string> = {
   violet: 'bg-jewel-violet-tint text-jewel-violet',
@@ -9,18 +10,26 @@ const ICON_TONE_CLASSES: Record<IconTone, string> = {
   teal: 'bg-jewel-teal-tint text-jewel-teal',
 };
 
+const SUB_TONE_CLASSES: Record<SubTone, string> = {
+  muted: 'text-muted',
+  success: 'text-success',
+  critical: 'text-critical',
+};
+
 export default function StatCard({
   label,
   value,
   sub,
   icon,
   iconTone = 'violet',
+  subTone = 'muted',
 }: {
   label: string;
   value: ReactNode;
   sub?: ReactNode;
   icon?: ReactNode;
   iconTone?: IconTone;
+  subTone?: SubTone;
 }) {
   return (
     <div
@@ -38,7 +47,7 @@ export default function StatCard({
         )}
       </div>
       <div className="mt-1.5 font-display text-[23px] font-extrabold tabular-nums">{value}</div>
-      {sub && <div className="mt-0.5 text-[10.5px] font-semibold text-success">{sub}</div>}
+      {sub && <div className={`mt-0.5 text-[10.5px] font-semibold ${SUB_TONE_CLASSES[subTone]}`}>{sub}</div>}
     </div>
   );
 }

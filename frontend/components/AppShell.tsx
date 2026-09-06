@@ -57,7 +57,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-[236px_1fr]">
+    <div className="grid min-h-screen grid-cols-[236px_1fr] max-[900px]:grid-cols-[72px_1fr]">
       <aside className="flex flex-col border-r border-border bg-surface p-3">
         <div className="flex items-center gap-2.5 px-2 pb-5 pt-1">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-brand to-jewel-violet text-white shadow-[0_4px_10px_-4px_rgba(47,111,237,0.5)]">
@@ -65,7 +65,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div>
             <div className="font-display text-[14.5px] font-extrabold leading-none">PulseGuard</div>
-            <div className="mt-0.5 text-[10px] text-muted">Telecom CX triage</div>
+            <div className="mt-0.5 text-[10px] text-muted max-[900px]:hidden">Telecom CX triage</div>
           </div>
         </div>
 
@@ -87,7 +87,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 }`}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                <span className="flex-1">{item.label}</span>
+                <span className="flex-1 max-[900px]:hidden">{item.label}</span>
                 {item.badgeKey === 'escalations' && unacknowledged > 0 && (
                   <span
                     data-testid="nav-badge"

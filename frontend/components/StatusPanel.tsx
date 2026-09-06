@@ -40,6 +40,7 @@ export default function StatusPanel({
           label="Orchestrator"
           value={orchestrator.data ? (orchestrator.data.running ? 'Running' : 'Stopped') : '—'}
           sub={orchestrator.data?.global_circuit_open ? 'Global circuit open' : 'All systems normal'}
+          subTone={orchestrator.data?.global_circuit_open ? 'critical' : 'success'}
           icon={<Activity className="h-3 w-3" />}
           iconTone="violet"
         />

@@ -60,8 +60,14 @@ later should mean editing one token file, not hunting through components.
 | `--jewel-rose` / `-tint` | `#BE1868` / `#FBE7F0` | Decorative accent |
 | `--critical` / `-tint` | `#C0335A` / `#FBE9EF` | Semantic: critical/error only |
 | `--warning` / `-tint` | `#B5720A` / `#FCF1DA` | Semantic: warning only |
-| `--success` / `-tint` | `#0E8A5F` / `#E0F5EC` | Semantic: success only |
+| `--success` / `-tint` | `#0A7550` / `#E0F5EC` | Semantic: success only |
 | `--neutral-tint` | `#F2EFE7` | Neutral badge/hover fill |
+
+> Note: `--success` was darkened from the originally-approved `#0E8A5F` to
+> `#0A7550` after a post-implementation WCAG AA contrast check found the
+> original value measured below 4.5:1 against both white and
+> `--success-tint`; `#0A7550` clears AA with margin (~5.7:1 / ~5.0:1) while
+> preserving the same hue.
 
 **Rule:** jewel tones (violet/teal/rose) are decorative/categorical only —
 never used to mean "error" or "success." Semantic colors are reserved

@@ -64,12 +64,12 @@ export default function QueueTable({
         </ToggleGroup>
       )}
       <div className="overflow-hidden rounded-[13px] border border-border bg-surface shadow-[var(--shadow-card)]">
-        <div className="grid grid-cols-[28px_1.3fr_96px_150px_96px_84px_20px] gap-3.5 border-b border-border px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-muted">
+        <div className="grid grid-cols-[28px_1.3fr_96px_150px_96px_84px_20px] max-[840px]:grid-cols-[28px_1fr_90px_26px] gap-3.5 border-b border-border px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-muted">
           <div></div>
           <div>Signal</div>
           <div>Carrier</div>
-          <div>Agent trail</div>
-          <div className="text-right">Priority</div>
+          <div className="max-[840px]:hidden">Agent trail</div>
+          <div className="text-right max-[840px]:hidden">Priority</div>
           <div className="text-right">Time</div>
           <div></div>
         </div>
@@ -101,7 +101,7 @@ export default function QueueTable({
               key={signal.signal_id}
               type="button"
               data-testid="queue-row"
-              className={`grid w-full grid-cols-[28px_1.3fr_96px_150px_96px_84px_20px] items-center gap-3.5 border-b border-border px-4 py-[11px] text-left text-[12.5px] last:border-b-0 hover:bg-neutral-tint ${
+              className={`grid w-full grid-cols-[28px_1.3fr_96px_150px_96px_84px_20px] max-[840px]:grid-cols-[28px_1fr_90px_26px] items-center gap-3.5 border-b border-border px-4 py-[11px] text-left text-[12.5px] last:border-b-0 hover:bg-neutral-tint ${
                 selected?.signal_id === signal.signal_id
                   ? 'bg-gradient-to-r from-brand-tint to-jewel-violet-tint'
                   : ''
@@ -128,8 +128,10 @@ export default function QueueTable({
               <div>
                 <Badge tone="neutral">{carrier ?? 'Unknown'}</Badge>
               </div>
-              <AgentTrail signal={signal} />
-              <div className="text-right">
+              <div className="max-[840px]:hidden">
+                <AgentTrail signal={signal} />
+              </div>
+              <div className="text-right max-[840px]:hidden">
                 {signal.stage === 'escalated' || signal.stage === 'resolved' ? (
                   <Badge tone={signal.stage === 'resolved' ? 'success' : severityTone(signal.severity)} dot>
                     {signal.stage === 'resolved' ? 'Resolved' : severityLabel(signal.severity)}

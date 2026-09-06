@@ -86,11 +86,11 @@ export default function EscalationsTable({
       </div>
 
       <div className="overflow-hidden rounded-[13px] border border-border bg-surface shadow-[var(--shadow-card)]">
-        <div className="grid grid-cols-[28px_1.4fr_110px_130px_100px] gap-3.5 border-b border-border px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-muted">
+        <div className="grid grid-cols-[28px_1.4fr_110px_130px_100px] max-[760px]:grid-cols-[28px_1fr_90px] gap-3.5 border-b border-border px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-muted">
           <div></div>
           <div>Escalation</div>
           <div>Carrier</div>
-          <div>Priority</div>
+          <div className="max-[760px]:hidden">Priority</div>
           <div className="text-right">Raised</div>
         </div>
 
@@ -118,7 +118,7 @@ export default function EscalationsTable({
             key={brief.signal_id}
             type="button"
             data-testid="escalation-row"
-            className={`grid w-full grid-cols-[28px_1.4fr_110px_130px_100px] items-center gap-3.5 border-b border-border px-4 py-[11px] text-left text-[12.5px] last:border-b-0 hover:bg-neutral-tint ${
+            className={`grid w-full grid-cols-[28px_1.4fr_110px_130px_100px] max-[760px]:grid-cols-[28px_1fr_90px] items-center gap-3.5 border-b border-border px-4 py-[11px] text-left text-[12.5px] last:border-b-0 hover:bg-neutral-tint ${
               selectedId === brief.signal_id ? 'bg-gradient-to-r from-brand-tint to-jewel-violet-tint' : ''
             }`}
             onClick={() => openSignal(brief.signal_id)}
@@ -138,7 +138,7 @@ export default function EscalationsTable({
             <div>
               <Badge tone="neutral">{brief.carrier}</Badge>
             </div>
-            <div>
+            <div className="max-[760px]:hidden">
               {brief.acknowledged ? (
                 <Badge tone="success" dot>
                   Acknowledged

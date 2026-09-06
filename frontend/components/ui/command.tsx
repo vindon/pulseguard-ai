@@ -48,6 +48,7 @@ function CommandDialog({
         className={cn("overflow-hidden p-0", className)}
         showCloseButton={showCloseButton}
       >
+        {/* LOCAL PATCH: DialogHeader moved inside DialogContent to fix an axe "region" violation — do not revert on `shadcn add --overwrite` */}
         <DialogHeader className="sr-only">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
