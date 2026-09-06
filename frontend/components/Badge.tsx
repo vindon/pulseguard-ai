@@ -1,5 +1,12 @@
 type Tone = 'critical' | 'warning' | 'success' | 'neutral';
 
+const TONE_CLASSES: Record<Tone, string> = {
+  critical: 'bg-critical-tint text-critical',
+  warning: 'bg-warning-tint text-warning',
+  success: 'bg-success-tint text-success',
+  neutral: 'bg-neutral-tint text-muted',
+};
+
 export default function Badge({
   tone,
   dot = false,
@@ -10,8 +17,10 @@ export default function Badge({
   children: React.ReactNode;
 }) {
   return (
-    <span className={`badge -${tone}`}>
-      {dot && <span className="badge-dot" />}
+    <span
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold ${TONE_CLASSES[tone]}`}
+    >
+      {dot && <span className="h-[5px] w-[5px] rounded-full bg-current" />}
       {children}
     </span>
   );
