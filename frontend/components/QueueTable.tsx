@@ -5,9 +5,11 @@ import type { PipelineSignalsResponse, SignalLifecycle } from '@/lib/types';
 import { usePolling } from '@/lib/usePolling';
 import { relativeTime, carrierColor, carrierInitial, sourceLabel } from '@/lib/format';
 import Badge, { severityTone, severityLabel, stageTone, stageLabel } from './Badge';
+import CategoryChip from './CategoryChip';
 import AgentTrail from './AgentTrail';
 import SignalDrawer from './SignalDrawer';
-import { ChevronRightIcon, EmptyIcon } from './icons';
+import { ChevronRight, Inbox } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const SOURCES = [
   { value: null, label: 'All feeds' },
@@ -32,8 +34,6 @@ export default function QueueTable({
 }) {
   const [source, setSource] = useState<string | null>(null);
   const path = `/pipeline/signals?hours=${hours}${source ? `&source=${source}` : ''}`;
-  // initialData was fetched server-side for the unfiltered path — only
-  // valid as the first-paint value while no source filter is applied yet.
   const { data, error, loading } = usePolling<PipelineSignalsResponse>(
     path,
     5000,
@@ -46,45 +46,51 @@ export default function QueueTable({
   return (
     <>
       {showFilters && (
-        <div className="filter-row">
+        <ToggleGroup
+          type="single"
+          value={source ?? 'all'}
+          onValueChange={(v) => setSource(v === 'all' || !v ? null : v)}
+          className="mb-4 flex-wrap justify-start gap-2"
+        >
           {SOURCES.map((s) => (
-            <button
+            <ToggleGroupItem
               key={s.label}
-              type="button"
-              className={`filter-pill${source === s.value ? ' active' : ''}`}
-              onClick={() => setSource(s.value)}
+              value={s.value ?? 'all'}
+              className="rounded-full border border-border px-3 py-1.5 text-[12.5px] font-semibold text-muted data-[state=on]:bg-ink data-[state=on]:text-bg"
             >
               {s.label}
-            </button>
+            </ToggleGroupItem>
           ))}
-          <div className="filter-spacer" />
-          <span className="filter-pill">Last {hours}h</span>
-        </div>
+        </ToggleGroup>
       )}
-      <div className="panel">
-        <div className="queue-head">
+      <div className="overflow-hidden rounded-[13px] border border-border bg-surface shadow-[var(--shadow-card)]">
+        <div className="grid grid-cols-[28px_1.3fr_96px_150px_96px_84px_20px] gap-3.5 border-b border-border px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-muted">
           <div></div>
           <div>Signal</div>
           <div>Carrier</div>
           <div>Agent trail</div>
-          <div>Priority</div>
-          <div style={{ textAlign: 'right' }}>Time</div>
+          <div className="text-right">Priority</div>
+          <div className="text-right">Time</div>
           <div></div>
         </div>
 
         {loading && signals.length === 0 && (
-          <div className="empty-state">Loading live signals…</div>
+          <div data-testid="empty-state" className="p-14 text-center text-muted">
+            Loading live signals…
+          </div>
         )}
 
         {!loading && !error && signals.length === 0 && (
-          <div className="empty-state">
-            <EmptyIcon />
+          <div data-testid="empty-state" className="p-14 text-center text-muted">
+            <Inbox className="mx-auto mb-3 h-8 w-8 opacity-50" />
             <div>No signals in the last {hours}h. Send a test signal to see the pipeline run.</div>
           </div>
         )}
 
         {error && signals.length === 0 && (
-          <div className="empty-state">Couldn&apos;t reach the gateway — {error}</div>
+          <div data-testid="empty-state" className="p-14 text-center text-muted">
+            Couldn&apos;t reach the gateway — {error}
+          </div>
         )}
 
         {signals.map((signal) => {
@@ -94,29 +100,36 @@ export default function QueueTable({
             <button
               key={signal.signal_id}
               type="button"
-              className={`queue-row${selected?.signal_id === signal.signal_id ? ' -selected' : ''}`}
+              data-testid="queue-row"
+              className={`grid w-full grid-cols-[28px_1.3fr_96px_150px_96px_84px_20px] items-center gap-3.5 border-b border-border px-4 py-[11px] text-left text-[12.5px] last:border-b-0 hover:bg-neutral-tint ${
+                selected?.signal_id === signal.signal_id
+                  ? 'bg-gradient-to-r from-brand-tint to-jewel-violet-tint'
+                  : ''
+              }`}
               onClick={() => setSelected(signal)}
             >
               <div
-                className="carrier-avatar"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
                 style={{ background: carrierColor(carrier) }}
               >
                 {carrierInitial(carrier)}
               </div>
-              <div className="ticket-main">
-                <div className="ticket-title">
+              <div className="min-w-0">
+                <div className="truncate text-[12.5px] font-semibold">
                   {sentinel?.content_preview || '(content pending validation)'}
                 </div>
-                <div className="ticket-meta">
-                  {signal.triage?.category ?? (sentinel ? sourceLabel(sentinel.source) : '—')} ·{' '}
-                  <span className="mono">{signal.signal_id.slice(0, 8)}</span>
+                <div className="mt-0.5 flex items-center gap-1.5 text-[10.5px] text-muted">
+                  <CategoryChip
+                    category={signal.triage?.category ?? (sentinel ? sourceLabel(sentinel.source) : 'Uncategorised')}
+                  />
+                  <span className="font-mono">{signal.signal_id.slice(0, 8)}</span>
                 </div>
               </div>
               <div>
                 <Badge tone="neutral">{carrier ?? 'Unknown'}</Badge>
               </div>
               <AgentTrail signal={signal} />
-              <div>
+              <div className="text-right">
                 {signal.stage === 'escalated' || signal.stage === 'resolved' ? (
                   <Badge tone={signal.stage === 'resolved' ? 'success' : severityTone(signal.severity)} dot>
                     {signal.stage === 'resolved' ? 'Resolved' : severityLabel(signal.severity)}
@@ -125,11 +138,11 @@ export default function QueueTable({
                   <Badge tone={stageTone(signal.stage)}>{stageLabel(signal.stage)}</Badge>
                 )}
               </div>
-              <div className="time-cell">
+              <div className="text-right text-[12px] tabular-nums text-muted">
                 {sentinel?.posted_at ? relativeTime(sentinel.posted_at) : '—'}
               </div>
-              <div className="chev">
-                <ChevronRightIcon />
+              <div className="flex text-muted">
+                <ChevronRight className="h-[15px] w-[15px]" />
               </div>
             </button>
           );

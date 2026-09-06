@@ -2,6 +2,8 @@
 
 import type { PipelineSignalsResponse } from '@/lib/types';
 import { usePolling } from '@/lib/usePolling';
+import StatCard from './StatCard';
+import { List, TriangleAlert, CircleCheck, Activity } from 'lucide-react';
 
 function avgTriageSeconds(signals: PipelineSignalsResponse['signals']): number | null {
   const deltas = signals
@@ -32,27 +34,35 @@ export default function OverviewStats({
   const avgTriage = avgTriageSeconds(signals);
 
   return (
-    <div className="stat-row">
-      <div className="stat-card">
-        <div className="stat-label">Open signals</div>
-        <div className="stat-value display">{signals.length > 0 ? open : '—'}</div>
-        <div className="stat-sub">last 24h</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-label">Auto-resolved</div>
-        <div className="stat-value display">{resolvedPct !== null ? `${resolvedPct}%` : '—'}</div>
-        <div className="stat-sub">of triaged signals</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-label">Escalated (P1)</div>
-        <div className="stat-value display">{p1}</div>
-        <div className="stat-sub">{escalated.length} escalated total</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-label">Avg. time to triage</div>
-        <div className="stat-value display">{avgTriage !== null ? `${avgTriage.toFixed(1)}s` : '—'}</div>
-        <div className="stat-sub">Sentinel → Triage</div>
-      </div>
+    <div className="mb-5 grid grid-cols-4 gap-3.5 max-[760px]:grid-cols-2">
+      <StatCard
+        label="Open signals"
+        value={signals.length > 0 ? open : '—'}
+        sub="last 24h"
+        icon={<List className="h-3 w-3" />}
+        iconTone="violet"
+      />
+      <StatCard
+        label="Auto-resolved"
+        value={resolvedPct !== null ? `${resolvedPct}%` : '—'}
+        sub="of triaged signals"
+        icon={<CircleCheck className="h-3 w-3" />}
+        iconTone="success"
+      />
+      <StatCard
+        label="Escalated (P1)"
+        value={p1}
+        sub={`${escalated.length} escalated total`}
+        icon={<TriangleAlert className="h-3 w-3" />}
+        iconTone="critical"
+      />
+      <StatCard
+        label="Avg. time to triage"
+        value={avgTriage !== null ? `${avgTriage.toFixed(1)}s` : '—'}
+        sub="Sentinel → Triage"
+        icon={<Activity className="h-3 w-3" />}
+        iconTone="teal"
+      />
     </div>
   );
 }
