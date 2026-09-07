@@ -14,6 +14,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from pulseguard.agents.llm_guard import invoke_with_budget_guard
 from pulseguard.logging_config import get_logger
 from pulseguard.models.signals import RawSignal, ValidatedSignal
 from pulseguard.security.audit import write_audit_entry
@@ -121,7 +122,7 @@ async def classify_validity(state: SentinelState) -> dict[str, Any]:
         SystemMessage(content=_VALIDITY_SYSTEM),
         HumanMessage(content=f"Source: {source}\n<customer_post>\n{content}\n</customer_post>"),
     ]
-    response = await _MODEL.ainvoke(messages)
+    response = await invoke_with_budget_guard(_MODEL, messages, model_name="claude-haiku-4-5")
     raw = response.content
     if isinstance(raw, list):
         reply = next(

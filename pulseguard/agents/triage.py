@@ -14,6 +14,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from pulseguard.agents.llm_guard import invoke_with_budget_guard
 from pulseguard.logging_config import get_logger
 from pulseguard.models.signals import ValidatedSignal
 from pulseguard.models.triage import TriageReport
@@ -113,7 +114,7 @@ async def classify_issue_type(state: TriageState) -> dict[str, Any]:
     messages = [SystemMessage(content=_TRIAGE_SYSTEM), HumanMessage(content=prompt)]
 
     try:
-        response = await _MODEL.ainvoke(messages)
+        response = await invoke_with_budget_guard(_MODEL, messages, model_name="claude-sonnet-4-6")
         # Extract text from response — langchain-anthropic may return list of content blocks
         raw = response.content
         if isinstance(raw, list):

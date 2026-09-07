@@ -69,6 +69,60 @@ def _make_triage(signal_id: str, category: str, tier: int, routing: str) -> Tria
     )
 
 
+class TestInvokeWithBudgetGuard:
+    @pytest.mark.asyncio
+    async def test_raises_before_calling_model_when_over_budget(self):
+        from pulseguard.agents.llm_guard import invoke_with_budget_guard
+        from pulseguard.security.budget_guard import BudgetExceededError
+
+        mock_model = AsyncMock()
+        mock_model.ainvoke = AsyncMock()
+
+        with patch(
+            "pulseguard.agents.llm_guard.check_budget",
+            AsyncMock(side_effect=BudgetExceededError("over cap")),
+        ):
+            with pytest.raises(BudgetExceededError):
+                await invoke_with_budget_guard(mock_model, [], model_name="claude-haiku-4-5")
+
+        mock_model.ainvoke.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_records_spend_from_response_usage_metadata(self):
+        from pulseguard.agents.llm_guard import invoke_with_budget_guard
+
+        mock_response = MagicMock()
+        mock_response.usage_metadata = {"input_tokens": 500, "output_tokens": 100}
+        mock_model = AsyncMock()
+        mock_model.ainvoke = AsyncMock(return_value=mock_response)
+
+        with (
+            patch("pulseguard.agents.llm_guard.check_budget", AsyncMock()),
+            patch("pulseguard.agents.llm_guard.record_spend", AsyncMock(return_value=0.001)) as mock_record,
+        ):
+            result = await invoke_with_budget_guard(mock_model, [], model_name="claude-haiku-4-5")
+
+        assert result is mock_response
+        mock_record.assert_awaited_once_with("claude-haiku-4-5", input_tokens=500, output_tokens=100)
+
+    @pytest.mark.asyncio
+    async def test_missing_usage_metadata_records_zero_without_raising(self):
+        from pulseguard.agents.llm_guard import invoke_with_budget_guard
+
+        mock_response = MagicMock()
+        mock_response.usage_metadata = None
+        mock_model = AsyncMock()
+        mock_model.ainvoke = AsyncMock(return_value=mock_response)
+
+        with (
+            patch("pulseguard.agents.llm_guard.check_budget", AsyncMock()),
+            patch("pulseguard.agents.llm_guard.record_spend", AsyncMock()) as mock_record,
+        ):
+            await invoke_with_budget_guard(mock_model, [], model_name="claude-haiku-4-5")
+
+        mock_record.assert_awaited_once_with("claude-haiku-4-5", input_tokens=0, output_tokens=0)
+
+
 # ── SENTINEL ───────────────────────────────────────────────────────────────
 
 

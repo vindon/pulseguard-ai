@@ -14,6 +14,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from pulseguard.agents.llm_guard import invoke_with_budget_guard
 from pulseguard.logging_config import get_logger
 from pulseguard.models.escalation import EscalationBrief
 from pulseguard.models.triage import TriageReport
@@ -98,7 +99,7 @@ async def compose_brief(state: EscalationState) -> dict[str, Any]:
     try:
         import json
 
-        response = await _MODEL.ainvoke(messages)
+        response = await invoke_with_budget_guard(_MODEL, messages, model_name="claude-opus-4-6")
         raw = response.content
         if isinstance(raw, list):
             text = next(

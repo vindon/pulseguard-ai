@@ -15,6 +15,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from pulseguard.agents.llm_guard import invoke_with_budget_guard
 from pulseguard.logging_config import get_logger
 from pulseguard.models.resolution import ResolutionRecord
 from pulseguard.models.triage import TriageReport
@@ -151,7 +152,9 @@ async def draft_response(state: ResolverState) -> dict[str, Any]:
     prompt = f"<customer_post>\n{content}\n</customer_post>\n\nKnowledge Base:\n{kb_context}"
     messages = [SystemMessage(content=_DRAFT_SYSTEM), HumanMessage(content=prompt)]
 
-    response = await _MODEL_THINKING.ainvoke(messages)
+    response = await invoke_with_budget_guard(
+        _MODEL_THINKING, messages, model_name="claude-sonnet-4-6"
+    )
     # Extract text content from response (extended thinking returns multiple blocks)
     draft = ""
     if hasattr(response, "content"):
@@ -186,7 +189,7 @@ async def validate_confidence(state: ResolverState) -> dict[str, Any]:
         f"Draft response:\n{draft}"
     )
     messages = [SystemMessage(content=_CONFIDENCE_SYSTEM), HumanMessage(content=prompt)]
-    response = await _MODEL.ainvoke(messages)
+    response = await invoke_with_budget_guard(_MODEL, messages, model_name="claude-sonnet-4-6")
     reply = _extract_text(response.content).strip()
 
     try:
@@ -235,7 +238,7 @@ async def format_for_channel(state: ResolverState) -> dict[str, Any]:
         f"Platform: {source} (limit: {char_limit} chars)\n\n" f"Draft response to adapt:\n{draft}"
     )
     messages = [SystemMessage(content=_FORMAT_SYSTEM), HumanMessage(content=prompt)]
-    response = await _MODEL.ainvoke(messages)
+    response = await invoke_with_budget_guard(_MODEL, messages, model_name="claude-sonnet-4-6")
     formatted = _extract_text(response.content).strip()
 
     logger.info("resolver_formatted", source=source, length=len(formatted))
