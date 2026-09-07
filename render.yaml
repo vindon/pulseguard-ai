@@ -35,13 +35,21 @@ services:
       # is defense-in-depth, not something the working app depends on.
       - key: ALLOWED_ORIGINS
         value: https://pulseguard-console.vercel.app
+      # Rate limiting only trusts CF-Connecting-IP / X-Forwarded-For from a
+      # request whose direct TCP peer is listed here — otherwise any caller
+      # could spoof those headers to bypass the limiter. Left unset until
+      # Render's actual ingress IP(s) for this service are confirmed
+      # (Dashboard → pulseguard-gateway → Connect → outbound/inbound IPs);
+      # until then the limiter safely falls back to the shared proxy IP.
+      - key: TRUSTED_PROXY_IPS
+        value: ""
       # Set for real functionality after the first deploy (Dashboard →
       # pulseguard-gateway → Environment) — free-tier secrets aren't
       # something a Blueprint should carry in git:
       #   ANTHROPIC_API_KEY   (required — powers all 4 agents)
       #   SLACK_WEBHOOK_URL, SENDGRID_API_KEY  (optional — escalation notifications)
-      #   REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, X_BEARER_TOKEN, SERPAPI_API_KEY
+      #   REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, X_BEARER_TOKEN
       #     (optional — each adapter degrades gracefully / just skips its
-      #     source if unset, so none of these block startup)
+      #     source if unset, so neither blocks startup)
       - key: ANTHROPIC_API_KEY
         sync: false

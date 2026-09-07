@@ -27,14 +27,6 @@ class Settings(BaseSettings):
     reddit_client_secret: str = ""
     reddit_user_agent: str = "PulseGuard/1.0"
 
-    # Trustpilot
-    trustpilot_poll_interval_seconds: int = 86400
-    trustpilot_request_delay_seconds: float = 1.0
-
-    # SerpAPI (Quora search)
-    serpapi_api_key: str = ""
-    quora_poll_interval_seconds: int = 86400
-
     # Notifications
     slack_webhook_url: str = ""
     notification_email: str = ""
@@ -53,6 +45,14 @@ class Settings(BaseSettings):
     # Empty means no browser origin is trusted — the intended path is always
     # the frontend's own server-side proxy, which isn't subject to CORS at all.
     allowed_origins: str = ""
+    # Comma-separated IPs of the reverse-proxy hop(s) directly in front of this
+    # service (e.g. Render's ingress). CF-Connecting-IP / X-Forwarded-For are
+    # only trusted for rate-limiting when request.client.host matches one of
+    # these — otherwise any caller could spoof those headers to bypass the
+    # limiter entirely. Empty means nothing is trusted; the limiter falls back
+    # to request.client.host, which is safe but keys on the shared proxy IP
+    # behind a PaaS. Set this once the real ingress IP(s) are confirmed.
+    trusted_proxy_ips: str = ""
 
     # Carriers
     monitored_carriers: str = "verizon,tmobile,att"
@@ -74,6 +74,10 @@ class Settings(BaseSettings):
         if self.environment != "production":
             return ["http://localhost:3000", "http://localhost:3100"]
         return []
+
+    @property
+    def trusted_proxy_ips_set(self) -> set[str]:
+        return {ip.strip() for ip in self.trusted_proxy_ips.split(",") if ip.strip()}
 
 
 settings = Settings()
