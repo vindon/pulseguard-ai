@@ -21,7 +21,7 @@ from pulseguard.tracing import node_trace
 
 logger = get_logger(__name__)
 
-_MODEL = ChatAnthropic(model="claude-haiku-4-5", temperature=0)
+_MODEL = ChatAnthropic(model="claude-haiku-4-5", temperature=0, timeout=30, max_retries=1)
 
 _VALIDITY_SYSTEM = """You are a telecom customer issue detector.
 

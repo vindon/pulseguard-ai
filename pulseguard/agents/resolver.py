@@ -25,12 +25,14 @@ logger = get_logger(__name__)
 
 _CONFIDENCE_THRESHOLD = 0.85
 
-_MODEL = ChatAnthropic(model="claude-sonnet-4-6", temperature=0)
+_MODEL = ChatAnthropic(model="claude-sonnet-4-6", temperature=0, timeout=30, max_retries=1)
 _MODEL_THINKING = ChatAnthropic(
     model="claude-sonnet-4-6",
     temperature=1,
     max_tokens=16000,
     thinking={"type": "enabled", "budget_tokens": 8000},
+    timeout=30,
+    max_retries=1,
 )
 
 _DRAFT_SYSTEM = """You are a telecom customer support specialist drafting a response to a customer issue.

@@ -22,7 +22,7 @@ from pulseguard.tracing import node_trace
 
 logger = get_logger(__name__)
 
-_MODEL = ChatAnthropic(model="claude-opus-4-6", temperature=0)
+_MODEL = ChatAnthropic(model="claude-opus-4-6", temperature=0, timeout=30, max_retries=1)
 
 _BRIEF_SYSTEM = """You are a senior telecom CX specialist composing an escalation brief for a human expert.
 
