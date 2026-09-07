@@ -132,6 +132,23 @@ curl -X POST http://localhost:8000/api/v1/signals/ingest \
 
 ---
 
+## Enterprise Integrations
+
+Escalations reach a human via Slack and/or email by default, plus four independently-optional channels so PulseGuard can be additive to a CX team's existing tools rather than a parallel, non-integrated alert:
+
+| Channel | Config | What it does |
+|---|---|---|
+| Generic webhook | `WEBHOOK_URL`, `WEBHOOK_SECRET` | POSTs the escalation brief anywhere — a Zapier/Make/n8n workflow, a ServiceNow inbound webhook action, or a custom internal endpoint. If `WEBHOOK_SECRET` is set, the body is signed the way Stripe/GitHub sign webhooks (`X-PulseGuard-Signature: sha256=<hmac>`) so the receiver can verify it. |
+| Microsoft Teams | `TEAMS_WEBHOOK_URL` | Posts an Adaptive Card to a channel. Must be a channel **Workflow's** webhook URL (Teams channel → Workflows → "Post to a channel when a webhook request is received") — Microsoft retired legacy incoming-webhook connectors in 2026, and old connector URLs no longer deliver. |
+| Zendesk | `ZENDESK_SUBDOMAIN`, `ZENDESK_EMAIL`, `ZENDESK_API_TOKEN` | Creates a ticket via the Ticketing API (`POST /api/v2/tickets.json`, Basic auth with an API token). |
+| Freshdesk | `FRESHDESK_DOMAIN`, `FRESHDESK_API_KEY` | Creates a ticket via the Tickets API (`POST /api/v2/tickets`, Basic auth with an API key). |
+
+Each channel checks its own configuration and no-ops (`{"sent": false, "reason": "..."}`) if unset — turning one on doesn't require configuring any other, and none block the escalation on failure.
+
+**On the Zendesk/Freshdesk tickets specifically:** PulseGuard never stores a real customer identity (author handles are always SHA-256 hashed, content is always PII-sanitised — see Security below), so it can't and doesn't create a ticket "as" the customer. It opens an internal ticket for the CX team, using the hashed `signal_id` as the required requester identifier (`unique_external_id`) so repeat escalations for the same signal map to a stable identity without ever sending PII to a third party.
+
+---
+
 ## Resolution Tiers
 
 | Tier | Description | Handler |

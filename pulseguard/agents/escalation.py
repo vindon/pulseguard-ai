@@ -150,17 +150,36 @@ async def assign_priority(state: EscalationState) -> dict[str, Any]:
 @node_trace("escalation", "notify")
 async def notify(state: EscalationState) -> dict[str, Any]:
     brief = _build_brief(state)
+    brief_dict = brief.model_dump()
 
-    from pulseguard.mcp_servers.notify_mcp import send_email_brief, send_slack_alert
+    from pulseguard.mcp_servers.notify_mcp import (
+        send_email_brief,
+        send_freshdesk_ticket,
+        send_slack_alert,
+        send_teams_alert,
+        send_webhook_alert,
+        send_zendesk_ticket,
+    )
 
-    slack_result = await send_slack_alert(brief.model_dump())
-    email_result = await send_email_brief(brief.model_dump())
+    # Each channel independently checks its own configuration and no-ops if
+    # unset (see notify_mcp) — enabling one enterprise integration doesn't
+    # require touching the others, and none block the signal on failure.
+    slack_result = await send_slack_alert(brief_dict)
+    email_result = await send_email_brief(brief_dict)
+    teams_result = await send_teams_alert(brief_dict)
+    webhook_result = await send_webhook_alert(brief_dict)
+    zendesk_result = await send_zendesk_ticket(brief_dict)
+    freshdesk_result = await send_freshdesk_ticket(brief_dict)
 
     logger.info(
         "escalation_notified",
         signal_id=state["signal_id"],
         slack_sent=slack_result.get("sent", False),
         email_sent=email_result.get("sent", False),
+        teams_sent=teams_result.get("sent", False),
+        webhook_sent=webhook_result.get("sent", False),
+        zendesk_sent=zendesk_result.get("sent", False),
+        freshdesk_sent=freshdesk_result.get("sent", False),
     )
     return {}
 

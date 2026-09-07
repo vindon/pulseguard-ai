@@ -7,7 +7,9 @@ import json
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
+import httpx
 import pytest
+import respx
 
 
 def _now_iso() -> str:
@@ -389,3 +391,127 @@ class TestNotifyMcp:
         assert result["acknowledged_by"] == "someone_else"
         mock_redis.hset.assert_not_awaited()
         mock_redis.decr.assert_not_awaited()
+
+
+class TestEnterpriseIntegrations:
+    """The four outbound integrations (generic webhook, Teams, Zendesk,
+    Freshdesk) share one contract with existing Slack/email: unconfigured
+    means a graceful no-op, configured means a real, verifiable HTTP call."""
+
+    @pytest.mark.asyncio
+    async def test_webhook_alert_not_configured(self):
+        from pulseguard.mcp_servers.notify_mcp import send_webhook_alert
+
+        with patch("pulseguard.mcp_servers.notify_mcp.settings.webhook_url", ""):
+            result = await send_webhook_alert(_sample_brief())
+        assert result == {"sent": False, "reason": "WEBHOOK_URL not configured"}
+
+    @pytest.mark.asyncio
+    async def test_webhook_alert_signs_body_when_secret_configured(self):
+        import hashlib
+        import hmac
+
+        from pulseguard.mcp_servers.notify_mcp import send_webhook_alert
+
+        captured = {}
+
+        def _capture(request):
+            captured["body"] = request.content
+            captured["signature"] = request.headers.get("x-pulseguard-signature")
+            return httpx.Response(200, json={"ok": True})
+
+        with (
+            patch("pulseguard.mcp_servers.notify_mcp.settings.webhook_url", "https://hooks.example.com/pg"),
+            patch("pulseguard.mcp_servers.notify_mcp.settings.webhook_secret", "shh"),
+            respx.mock,
+        ):
+            respx.post("https://hooks.example.com/pg").mock(side_effect=_capture)
+            result = await send_webhook_alert(_sample_brief())
+
+        assert result["sent"] is True
+        expected_sig = "sha256=" + hmac.new(b"shh", captured["body"], hashlib.sha256).hexdigest()
+        assert captured["signature"] == expected_sig
+
+    @pytest.mark.asyncio
+    async def test_teams_alert_not_configured(self):
+        from pulseguard.mcp_servers.notify_mcp import send_teams_alert
+
+        with patch("pulseguard.mcp_servers.notify_mcp.settings.teams_webhook_url", ""):
+            result = await send_teams_alert(_sample_brief())
+        assert result == {"sent": False, "reason": "TEAMS_WEBHOOK_URL not configured"}
+
+    @pytest.mark.asyncio
+    async def test_teams_alert_posts_adaptive_card(self):
+        from pulseguard.mcp_servers.notify_mcp import send_teams_alert
+
+        with (
+            patch(
+                "pulseguard.mcp_servers.notify_mcp.settings.teams_webhook_url",
+                "https://teams.example.com/workflow-url",
+            ),
+            respx.mock,
+        ):
+            route = respx.post("https://teams.example.com/workflow-url").mock(
+                return_value=httpx.Response(200)
+            )
+            result = await send_teams_alert(_sample_brief())
+
+        assert result["sent"] is True
+        sent_body = json.loads(route.calls[0].request.content)
+        assert sent_body["attachments"][0]["contentType"] == "application/vnd.microsoft.card.adaptive"
+
+    @pytest.mark.asyncio
+    async def test_zendesk_ticket_not_configured(self):
+        from pulseguard.mcp_servers.notify_mcp import send_zendesk_ticket
+
+        with patch("pulseguard.mcp_servers.notify_mcp.settings.zendesk_subdomain", ""):
+            result = await send_zendesk_ticket(_sample_brief())
+        assert result == {"sent": False, "reason": "Zendesk credentials not configured"}
+
+    @pytest.mark.asyncio
+    async def test_zendesk_ticket_created_without_customer_pii(self):
+        from pulseguard.mcp_servers.notify_mcp import send_zendesk_ticket
+
+        with (
+            patch("pulseguard.mcp_servers.notify_mcp.settings.zendesk_subdomain", "acme"),
+            patch("pulseguard.mcp_servers.notify_mcp.settings.zendesk_email", "cx@acme.com"),
+            patch("pulseguard.mcp_servers.notify_mcp.settings.zendesk_api_token", "tok123"),
+            respx.mock,
+        ):
+            route = respx.post("https://acme.zendesk.com/api/v2/tickets.json").mock(
+                return_value=httpx.Response(201, json={"ticket": {"id": 42}})
+            )
+            result = await send_zendesk_ticket(_sample_brief())
+
+        assert result == {"sent": True, "signal_id": "sig-001", "ticket_id": 42}
+        sent = json.loads(route.calls[0].request.content)
+        # No real customer identity is ever sent — only the hashed signal_id.
+        assert sent["ticket"]["requester"]["unique_external_id"] == "pulseguard-sig-001"
+        assert "email" not in sent["ticket"]["requester"]
+
+    @pytest.mark.asyncio
+    async def test_freshdesk_ticket_not_configured(self):
+        from pulseguard.mcp_servers.notify_mcp import send_freshdesk_ticket
+
+        with patch("pulseguard.mcp_servers.notify_mcp.settings.freshdesk_domain", ""):
+            result = await send_freshdesk_ticket(_sample_brief())
+        assert result == {"sent": False, "reason": "Freshdesk credentials not configured"}
+
+    @pytest.mark.asyncio
+    async def test_freshdesk_ticket_created_without_customer_pii(self):
+        from pulseguard.mcp_servers.notify_mcp import send_freshdesk_ticket
+
+        with (
+            patch("pulseguard.mcp_servers.notify_mcp.settings.freshdesk_domain", "acme"),
+            patch("pulseguard.mcp_servers.notify_mcp.settings.freshdesk_api_key", "key123"),
+            respx.mock,
+        ):
+            route = respx.post("https://acme.freshdesk.com/api/v2/tickets").mock(
+                return_value=httpx.Response(201, json={"id": 99})
+            )
+            result = await send_freshdesk_ticket(_sample_brief())
+
+        assert result == {"sent": True, "signal_id": "sig-001", "ticket_id": 99}
+        sent = json.loads(route.calls[0].request.content)
+        assert sent["unique_external_id"] == "pulseguard-sig-001"
+        assert "email" not in sent

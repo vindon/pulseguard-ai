@@ -48,6 +48,8 @@ services:
       # something a Blueprint should carry in git:
       #   ANTHROPIC_API_KEY   (required — powers all 4 agents)
       #   SLACK_WEBHOOK_URL, SENDGRID_API_KEY  (optional — escalation notifications)
+      #   WEBHOOK_URL, WEBHOOK_SECRET, TEAMS_WEBHOOK_URL, ZENDESK_SUBDOMAIN/EMAIL/API_TOKEN,
+      #     FRESHDESK_DOMAIN/API_KEY  (optional — enterprise integrations, each independently on/off)
       #   REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, X_BEARER_TOKEN
       #     (optional — each adapter degrades gracefully / just skips its
       #     source if unset, so neither blocks startup)

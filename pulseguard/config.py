@@ -36,6 +36,29 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     sendgrid_api_key: str = ""
 
+    # Enterprise integrations — each is independently optional; unset means
+    # that channel is skipped, matching Slack/email above. These exist so a
+    # telecom's existing CX stack can receive escalations directly, instead
+    # of PulseGuard being a parallel, non-integrated alert tool.
+    #
+    # Generic outbound webhook — the universal "plug into anything" adapter
+    # (Zapier, Make, n8n, ServiceNow inbound actions, or a custom internal
+    # system). Payload is signed so receivers can verify authenticity.
+    webhook_url: str = ""
+    webhook_secret: str = ""
+    # Microsoft Teams — incoming webhook *connectors* were retired by
+    # Microsoft in 2026; this must be a channel Workflow's webhook URL
+    # (Teams channel -> Workflows -> "Post to a channel when a webhook
+    # request is received"), not a legacy connector URL.
+    teams_webhook_url: str = ""
+    # Zendesk — creates a ticket via the Ticketing API.
+    zendesk_subdomain: str = ""
+    zendesk_email: str = ""
+    zendesk_api_token: str = ""
+    # Freshdesk — creates a ticket via the same-shaped Tickets API.
+    freshdesk_domain: str = ""
+    freshdesk_api_key: str = ""
+
     # Redis
     redis_url: str = "redis://localhost:6379"
 

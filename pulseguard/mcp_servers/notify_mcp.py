@@ -219,6 +219,195 @@ async def _send_via_smtp(subject: str, body: str, to_addr: str) -> None:
 
 
 @mcp.tool()
+@tool_trace("notify", "send_webhook_alert")
+async def send_webhook_alert(brief: dict[str, Any]) -> dict[str, Any]:
+    """POST the escalation brief to a generic configured webhook.
+
+    This is the "plug into anything" integration: point it at a Zapier/Make/
+    n8n workflow, a ServiceNow inbound webhook action, or a custom internal
+    endpoint, and PulseGuard becomes additive to whatever system-of-record a
+    CX team already uses instead of a parallel, non-integrated alert.
+
+    If WEBHOOK_SECRET is set, the raw JSON body is signed the way Stripe/
+    GitHub webhooks are — HMAC-SHA256 over the exact bytes sent, hex-encoded,
+    in an X-PulseGuard-Signature header — so the receiver can verify the
+    request actually came from this PulseGuard instance before acting on it.
+    """
+    if not settings.webhook_url:
+        return {"sent": False, "reason": "WEBHOOK_URL not configured"}
+
+    try:
+        import hashlib
+        import hmac
+
+        eb = EscalationBrief(**brief)
+        body = eb.model_dump_json().encode("utf-8")
+        headers = {"Content-Type": "application/json"}
+        if settings.webhook_secret:
+            signature = hmac.new(
+                settings.webhook_secret.encode("utf-8"), body, hashlib.sha256
+            ).hexdigest()
+            headers["X-PulseGuard-Signature"] = f"sha256={signature}"
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(settings.webhook_url, content=body, headers=headers)
+            resp.raise_for_status()
+        logger.info("webhook_alert_sent", signal_id=eb.signal_id, severity=eb.severity)
+        return {"sent": True, "signal_id": eb.signal_id}
+    except Exception as exc:
+        logger.error("webhook_alert_error", error=str(exc))
+        return ErrorResponse(error=str(exc), code="WEBHOOK_ERROR").model_dump()
+
+
+@mcp.tool()
+@tool_trace("notify", "send_teams_alert")
+async def send_teams_alert(brief: dict[str, Any]) -> dict[str, Any]:
+    """Post the escalation brief to a Microsoft Teams channel.
+
+    TEAMS_WEBHOOK_URL must be a channel Workflow's webhook URL (Teams
+    channel -> Workflows -> "Post to a channel when a webhook request is
+    received"), not a legacy Office 365 Connector URL — Microsoft retired
+    incoming webhook connectors in 2026, and old connector URLs no longer
+    deliver. A Workflow endpoint accepts the same adaptive-card attachment
+    shape sent here.
+    """
+    if not settings.teams_webhook_url:
+        return {"sent": False, "reason": "TEAMS_WEBHOOK_URL not configured"}
+
+    try:
+        eb = EscalationBrief(**brief)
+        emoji = _severity_emoji(eb.severity)
+        card = {
+            "type": "AdaptiveCard",
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.4",
+            "body": [
+                {
+                    "type": "TextBlock",
+                    "text": f"{emoji} {eb.severity} Escalation: {eb.carrier.upper()}",
+                    "weight": "bolder",
+                    "size": "medium",
+                },
+                {"type": "TextBlock", "text": eb.summary, "wrap": True},
+                {
+                    "type": "FactSet",
+                    "facts": [
+                        {"title": "Category", "value": eb.category},
+                        {"title": "Platform", "value": eb.source_platform},
+                        {"title": "Churn risk", "value": "Yes" if eb.churn_risk else "No"},
+                        {"title": "Recommended action", "value": eb.recommended_action},
+                    ],
+                },
+            ],
+            "actions": [
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "View original post",
+                    "url": eb.original_post_url,
+                }
+            ],
+        }
+        payload = {
+            "type": "message",
+            "attachments": [
+                {"contentType": "application/vnd.microsoft.card.adaptive", "content": card}
+            ],
+        }
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(settings.teams_webhook_url, json=payload)
+            resp.raise_for_status()
+        logger.info("teams_alert_sent", signal_id=eb.signal_id, severity=eb.severity)
+        return {"sent": True, "signal_id": eb.signal_id}
+    except Exception as exc:
+        logger.error("teams_alert_error", error=str(exc))
+        return ErrorResponse(error=str(exc), code="TEAMS_ERROR").model_dump()
+
+
+@mcp.tool()
+@tool_trace("notify", "send_zendesk_ticket")
+async def send_zendesk_ticket(brief: dict[str, Any]) -> dict[str, Any]:
+    """Create a Zendesk ticket from the escalation brief.
+
+    PulseGuard never stores a customer's real identity (CLAUDE.md: author
+    handles are always hashed, content is always PII-sanitised) — so this
+    can't and doesn't create the ticket "as" the customer. It opens an
+    internal ticket for the CX team, using the hashed signal_id as Zendesk's
+    required unique_external_id so repeat escalations for the same signal
+    map to a stable identity without ever exposing PII to Zendesk.
+    """
+    if not (settings.zendesk_subdomain and settings.zendesk_email and settings.zendesk_api_token):
+        return {"sent": False, "reason": "Zendesk credentials not configured"}
+
+    try:
+        eb = EscalationBrief(**brief)
+        ticket = {
+            "ticket": {
+                "subject": f"[PulseGuard {eb.severity}] {eb.carrier.upper()} — {eb.category}",
+                "comment": {"body": _format_email_body(eb)},
+                "priority": {"P1": "urgent", "P2": "high", "P3": "normal"}.get(
+                    eb.severity, "normal"
+                ),
+                "tags": ["pulseguard", eb.carrier, eb.severity.lower()],
+                "requester": {
+                    "name": "PulseGuard AI",
+                    "unique_external_id": f"pulseguard-{eb.signal_id}",
+                },
+            }
+        }
+        url = f"https://{settings.zendesk_subdomain}.zendesk.com/api/v2/tickets.json"
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                url,
+                json=ticket,
+                auth=(f"{settings.zendesk_email}/token", settings.zendesk_api_token),
+            )
+            resp.raise_for_status()
+        ticket_id = resp.json().get("ticket", {}).get("id")
+        logger.info("zendesk_ticket_created", signal_id=eb.signal_id, ticket_id=ticket_id)
+        return {"sent": True, "signal_id": eb.signal_id, "ticket_id": ticket_id}
+    except Exception as exc:
+        logger.error("zendesk_ticket_error", error=str(exc))
+        return ErrorResponse(error=str(exc), code="ZENDESK_ERROR").model_dump()
+
+
+@mcp.tool()
+@tool_trace("notify", "send_freshdesk_ticket")
+async def send_freshdesk_ticket(brief: dict[str, Any]) -> dict[str, Any]:
+    """Create a Freshdesk ticket from the escalation brief.
+
+    Same PII posture as send_zendesk_ticket: no real customer identity is
+    sent. Freshdesk's ticket-creation API requires one of
+    requester_id/email/phone/twitter_id/facebook_id/unique_external_id — this
+    uses unique_external_id keyed on the hashed signal_id for the same reason.
+    """
+    if not (settings.freshdesk_domain and settings.freshdesk_api_key):
+        return {"sent": False, "reason": "Freshdesk credentials not configured"}
+
+    try:
+        eb = EscalationBrief(**brief)
+        ticket = {
+            "subject": f"[PulseGuard {eb.severity}] {eb.carrier.upper()} — {eb.category}",
+            "description": _format_email_body(eb),
+            "priority": {"P1": 4, "P2": 3, "P3": 2}.get(eb.severity, 2),
+            "status": 2,  # Open
+            "tags": ["pulseguard", eb.carrier, eb.severity.lower()],
+            "unique_external_id": f"pulseguard-{eb.signal_id}",
+        }
+        url = f"https://{settings.freshdesk_domain}.freshdesk.com/api/v2/tickets"
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                url, json=ticket, auth=(settings.freshdesk_api_key, "X")
+            )
+            resp.raise_for_status()
+        ticket_id = resp.json().get("id")
+        logger.info("freshdesk_ticket_created", signal_id=eb.signal_id, ticket_id=ticket_id)
+        return {"sent": True, "signal_id": eb.signal_id, "ticket_id": ticket_id}
+    except Exception as exc:
+        logger.error("freshdesk_ticket_error", error=str(exc))
+        return ErrorResponse(error=str(exc), code="FRESHDESK_ERROR").model_dump()
+
+
+@mcp.tool()
 @tool_trace("notify", "acknowledge_escalation")
 async def acknowledge_escalation(signal_id: str, ack_by: str) -> dict[str, Any]:
     """Mark a human acknowledgement received for an escalation."""
