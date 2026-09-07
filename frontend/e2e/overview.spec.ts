@@ -10,12 +10,11 @@ test.describe('Overview', () => {
 
     await page.goto('/');
 
-    await expect(page.locator('.page-title')).toHaveText('Overview');
-    await expect(page.locator('.stat-card')).toHaveCount(4);
+    await expect(page.getByTestId('page-title')).toHaveText('Overview');
+    await expect(page.getByTestId('stat-card')).toHaveCount(4);
     await expect(page.getByText('Recent signals')).toBeVisible();
 
-    // The two fixture signals from the mock backend.
-    await expect(page.locator('.queue-row')).toHaveCount(2);
+    await expect(page.getByTestId('queue-row')).toHaveCount(2);
     await expect(page.getByText(/Verizon overcharged me AGAIN/)).toBeVisible();
 
     expect(errors).toEqual([]);
@@ -23,6 +22,6 @@ test.describe('Overview', () => {
 
   test('sidebar shows the unacknowledged escalation badge', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('.nav-badge')).toHaveText('1');
+    await expect(page.getByTestId('nav-badge')).toHaveText('1');
   });
 });

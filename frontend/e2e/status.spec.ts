@@ -9,10 +9,10 @@ test.describe('Adapter status', () => {
 
     const adapterNames = ['X', 'Reddit', 'Google Play', 'App Store', 'Trustpilot', 'Quora'];
     for (const name of adapterNames) {
-      await expect(page.locator('.status-card-name', { hasText: name }).first()).toBeVisible();
+      await expect(page.getByTestId('status-card-name').filter({ hasText: name }).first()).toBeVisible();
     }
 
-    await expect(page.locator('.status-card')).toHaveCount(12); // 6 adapters + 6 breakers
-    await expect(page.locator('.status-dot.-down')).toHaveCount(0);
+    await expect(page.getByTestId('status-card')).toHaveCount(12); // 6 adapters + 6 breakers
+    await expect(page.locator('[data-testid="status-dot"][data-status="down"]')).toHaveCount(0);
   });
 });

@@ -15,8 +15,8 @@ test.describe('Accessibility', () => {
 
   test('the signal detail drawer has no violations while open', async ({ page }) => {
     await page.goto('/queue');
-    await page.locator('.queue-row').first().click();
-    await expect(page.locator('.drawer')).toBeVisible();
+    await page.getByTestId('queue-row').first().click();
+    await expect(page.getByTestId('signal-drawer')).toBeVisible();
     const results = await new AxeBuilder({ page }).analyze();
     expect(results.violations).toEqual([]);
   });

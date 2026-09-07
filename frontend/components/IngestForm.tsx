@@ -3,7 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { IngestResponse, SignalSource } from '@/lib/types';
-import { CheckIcon, AlertTriangleIcon, SendIcon } from './icons';
+import { Check, TriangleAlert, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const SOURCES: { value: SignalSource; label: string }[] = [
   { value: 'x', label: 'X (Twitter)' },
@@ -97,87 +102,112 @@ export default function IngestForm() {
   }
 
   return (
-    <div className="form-card">
-      <div className="field">
-        <span className="field-label">Try an example</span>
-        <div className="filter-row" style={{ marginBottom: 0 }}>
+    <div className="max-w-[560px] rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow-card)]">
+      <div className="mb-4">
+        <Label className="mb-2 block text-[12.5px] font-bold">Try an example</Label>
+        <div className="flex flex-wrap gap-2">
           {EXAMPLES.map((ex) => (
-            <button key={ex.label} type="button" className="filter-pill" onClick={() => fillExample(ex)}>
+            <Button
+              key={ex.label}
+              type="button"
+              variant="outline"
+              className="rounded-full px-3 py-1.5 text-[12px] font-semibold"
+              onClick={() => fillExample(ex)}
+            >
               {ex.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="field-row">
-          <div className="field">
-            <label className="field-label" htmlFor="source">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3.5 max-[520px]:grid-cols-1">
+          <div>
+            <Label htmlFor="source" className="mb-1.5 block text-[12.5px] font-bold">
               Feed source
-            </label>
-            <select id="source" value={source} onChange={(e) => setSource(e.target.value as SignalSource)}>
-              {SOURCES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+            </Label>
+            <Select value={source} onValueChange={(v) => setSource(v as SignalSource)}>
+              <SelectTrigger id="source" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SOURCES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="field">
-            <label className="field-label" htmlFor="carrier">
+          <div>
+            <Label htmlFor="carrier" className="mb-1.5 block text-[12.5px] font-bold">
               Carrier hint
-            </label>
-            <select id="carrier" value={carrier} onChange={(e) => setCarrier(e.target.value)}>
-              {CARRIERS.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
+            </Label>
+            <Select value={carrier || 'auto'} onValueChange={(v) => setCarrier(v === 'auto' ? '' : v)}>
+              <SelectTrigger id="carrier" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CARRIERS.map((c) => (
+                  <SelectItem key={c.value || 'auto'} value={c.value || 'auto'}>
+                    {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        <div className="field">
-          <label className="field-label" htmlFor="author">
+        <div>
+          <Label htmlFor="author" className="mb-1.5 block text-[12.5px] font-bold">
             Author handle
-          </label>
-          <input
+          </Label>
+          <Input
             id="author"
             type="text"
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
             placeholder="anonymous_demo_user"
           />
-          <div className="field-hint">Hashed with SHA-256 before storage — never kept in the clear.</div>
+          <div className="mt-1.5 text-[11.5px] text-muted">
+            Hashed with SHA-256 before storage — never kept in the clear.
+          </div>
         </div>
 
-        <div className="field">
-          <label className="field-label" htmlFor="content">
+        <div>
+          <Label htmlFor="content" className="mb-1.5 block text-[12.5px] font-bold">
             What they said
-          </label>
-          <textarea
+          </Label>
+          <Textarea
             id="content"
             required
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Write a complaint (or compliment) as if it were a real post…"
+            className="min-h-[80px]"
           />
         </div>
 
         {error && (
-          <div className="callout -error">
-            <AlertTriangleIcon />
+          <div
+            data-testid="callout-error"
+            className="flex items-start gap-2 rounded-[10px] bg-critical-tint px-3.5 py-3 text-[12.5px] text-critical"
+          >
+            <TriangleAlert className="mt-0.5 h-[15px] w-[15px] shrink-0" />
             <span>Couldn&apos;t send that signal — {error}</span>
           </div>
         )}
 
         {result && (
-          <div className="callout -success">
-            <CheckIcon />
+          <div
+            data-testid="callout-success"
+            className="flex items-start gap-2 rounded-[10px] bg-success-tint px-3.5 py-3 text-[12.5px] text-success"
+          >
+            <Check className="mt-0.5 h-[15px] w-[15px] shrink-0" />
             <span>
-              Queued as <span className="mono">{result.signal_id.slice(0, 8)}</span>. It&apos;s moving
-              through Sentinel → Triage now — check the{' '}
-              <Link href="/queue" style={{ textDecoration: 'underline' }}>
+              Queued as <span className="font-mono">{result.signal_id.slice(0, 8)}</span>. It&apos;s moving through
+              Sentinel → Triage now — check the{' '}
+              <Link href="/queue" className="underline">
                 signal queue
               </Link>{' '}
               in a few seconds to watch it land.
@@ -185,19 +215,23 @@ export default function IngestForm() {
           </div>
         )}
 
-        <button type="submit" className="btn btn-primary" disabled={submitting || !content}>
+        <Button
+          type="submit"
+          disabled={submitting || !content}
+          className="bg-gradient-to-r from-brand to-jewel-violet text-white hover:opacity-90"
+        >
           {submitting ? (
             <>
-              <span className="spinner" />
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
               Sending…
             </>
           ) : (
             <>
-              <SendIcon width={15} height={15} />
+              <Send className="h-[15px] w-[15px]" />
               Send to the pipeline
             </>
           )}
-        </button>
+        </Button>
       </form>
     </div>
   );
