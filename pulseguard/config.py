@@ -85,6 +85,16 @@ class Settings(BaseSettings):
     audit_log_path: str = "logs/audit.jsonl"
     enable_adapter_polling: bool = True
 
+    # Spend guard — hard caps on LLM spend, checked before every call.
+    # 0 means "no cap" (useful for local dev); set real values before any
+    # pilot deployment. Pricing is per-million-tokens, "model:input,output"
+    # pairs comma-separated, e.g. "claude-haiku-4-5:1.00,5.00" — set from
+    # Anthropic's current published pricing at deploy time, not hardcoded
+    # here, since pricing changes independently of this codebase.
+    daily_budget_usd_cap: float = 0.0
+    monthly_budget_usd_cap: float = 0.0
+    model_pricing_per_million_tokens: str = ""
+
     @property
     def carrier_list(self) -> list[str]:
         return [c.strip() for c in self.monitored_carriers.split(",") if c.strip()]
@@ -101,6 +111,33 @@ class Settings(BaseSettings):
     @property
     def trusted_proxy_ips_set(self) -> set[str]:
         return {ip.strip() for ip in self.trusted_proxy_ips.split(",") if ip.strip()}
+
+    @property
+    def model_pricing_map(self) -> dict[str, tuple[float, float]]:
+        """Parses MODEL_PRICING_PER_MILLION_TOKENS into {model: (input_$/M, output_$/M)}.
+
+        The format is "model:input,output" pairs, comma-separated for
+        multiple models. A naive split on "," alone is ambiguous, since the
+        input/output rate pair inside one entry is itself comma-separated
+        (e.g. "claude-haiku-4-5:1.00,5.00" has two commas' worth of meaning
+        packed differently than a plain CSV list). So this walks the
+        comma-split tokens instead: a token containing ":" starts a new
+        model entry, and the token immediately after it is that model's
+        output rate.
+        """
+        pricing: dict[str, tuple[float, float]] = {}
+        tokens = [t.strip() for t in self.model_pricing_per_million_tokens.split(",") if t.strip()]
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+            if ":" not in token or i + 1 >= len(tokens):
+                i += 1
+                continue
+            model, input_rate = token.split(":", 1)
+            output_rate = tokens[i + 1]
+            pricing[model.strip()] = (float(input_rate), float(output_rate))
+            i += 2
+        return pricing
 
 
 settings = Settings()
