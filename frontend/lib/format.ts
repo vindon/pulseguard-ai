@@ -30,10 +30,6 @@ export function carrierInitial(carrier: string | null | undefined): string {
 const SOURCE_LABELS: Record<string, string> = {
   x: 'X',
   reddit: 'Reddit',
-  google_play: 'Google Play',
-  app_store: 'App Store',
-  trustpilot: 'Trustpilot',
-  quora: 'Quora',
 };
 
 export function sourceLabel(source: string): string {

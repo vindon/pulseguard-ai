@@ -15,10 +15,6 @@ const SOURCES = [
   { value: null, label: 'All feeds' },
   { value: 'x', label: 'X' },
   { value: 'reddit', label: 'Reddit' },
-  { value: 'google_play', label: 'Google Play' },
-  { value: 'app_store', label: 'App Store' },
-  { value: 'trustpilot', label: 'Trustpilot' },
-  { value: 'quora', label: 'Quora' },
 ];
 
 export default function QueueTable({

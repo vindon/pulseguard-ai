@@ -7,8 +7,6 @@ import respx
 
 from pulseguard.adapters.base import FeedAdapter
 from pulseguard.adapters.carrier_configs import detect_carrier
-from pulseguard.adapters.quora_adapter import QuoraAdapter
-from pulseguard.adapters.quora_adapter import _extract_author as _quora_extract_author
 from pulseguard.adapters.reddit_adapter import RedditAdapter, _is_relevant
 from pulseguard.adapters.x_adapter import XAdapter, _build_query
 from pulseguard.security.sanitise import hash_handle
@@ -279,87 +277,3 @@ class TestFeedAdapterBase:
         assert FeedAdapter.content_hash("content A") != FeedAdapter.content_hash("content B")
 
 
-# ── Quora adapter ────────────────────────────────────────────────────────────
-
-
-def _quora_result(
-    link: str = "https://www.quora.com/Why-is-Verizon-billing-me-twice",
-    title: str = "Why is Verizon billing me twice? - Quora",
-    snippet: str = "John Doe: I had the exact same billing problem last month...",
-) -> dict:
-    return {"position": 1, "title": title, "link": link, "snippet": snippet}
-
-
-def _quora_response(results: list[dict] | None = None) -> dict:
-    return {"organic_results": results if results is not None else []}
-
-
-_SERPAPI_URL = "https://serpapi.com/search.json"
-
-
-class TestQuoraAdapter:
-    def test_extract_author_from_snippet(self):
-        assert _quora_extract_author("John Doe: had this issue too") == "John Doe"
-
-    def test_extract_author_falls_back_to_anonymous(self):
-        assert _quora_extract_author("no colon in this snippet at all") == "anonymous"
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_fetch_returns_signals(self):
-        adapter = QuoraAdapter()
-        respx.get(_SERPAPI_URL).mock(
-            side_effect=[
-                httpx.Response(200, json=_quora_response([_quora_result()])),
-                httpx.Response(200, json=_quora_response([])),
-                httpx.Response(200, json=_quora_response([])),
-            ]
-        )
-
-        signals = await adapter.fetch()
-        assert len(signals) == 1
-        assert signals[0].source == "quora"
-        assert signals[0].carrier_hint == "verizon"
-        assert signals[0].url == "https://www.quora.com/Why-is-Verizon-billing-me-twice"
-        assert signals[0].source_id == FeedAdapter.content_hash(signals[0].url)
-        assert signals[0].author_handle == hash_handle("John Doe")
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_fetch_no_results(self):
-        adapter = QuoraAdapter()
-        respx.get(_SERPAPI_URL).mock(return_value=httpx.Response(200, json=_quora_response([])))
-
-        signals = await adapter.fetch()
-        assert signals == []
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_non_quora_links_filtered(self):
-        adapter = QuoraAdapter()
-        off_site_result = _quora_result(link="https://www.reddit.com/r/verizon/some-thread")
-        respx.get(_SERPAPI_URL).mock(
-            return_value=httpx.Response(200, json=_quora_response([off_site_result]))
-        )
-
-        signals = await adapter.fetch()
-        assert signals == []
-
-    @pytest.mark.asyncio
-    @respx.mock
-    async def test_malformed_response_counts_as_error(self):
-        adapter = QuoraAdapter()
-        respx.get(_SERPAPI_URL).mock(
-            return_value=httpx.Response(500, json={"error": "internal error"})
-        )
-
-        signals = await adapter.fetch()
-        assert signals == []
-        assert adapter._consecutive_errors == 3  # one failure per configured carrier
-
-    @pytest.mark.asyncio
-    async def test_health_check_degraded_at_three_errors(self):
-        adapter = QuoraAdapter()
-        adapter._consecutive_errors = 3
-        health = await adapter.health_check()
-        assert health.status == "DEGRADED"

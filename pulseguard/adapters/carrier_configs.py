@@ -6,9 +6,6 @@ CARRIER_CONFIGS: dict[str, CarrierConfig] = {
         display_name="Verizon",
         handles=["@Verizon", "@VerizonSupport", "@VZWSupport"],
         keywords=["verizon", "vzw", "verizonwireless"],
-        app_store_id="1489157249",
-        play_store_id="com.verizon.mymobilesecure",
-        trustpilot_slug="verizon",
         subreddits=["verizon"],
     ),
     "tmobile": CarrierConfig(
@@ -16,9 +13,6 @@ CARRIER_CONFIGS: dict[str, CarrierConfig] = {
         display_name="T-Mobile",
         handles=["@TMobile", "@TMobileHelp"],
         keywords=["t-mobile", "tmobile", "tmo"],
-        app_store_id="561625752",
-        play_store_id="com.tmobile.pr.mytmobile",
-        trustpilot_slug="t-mobile",
         subreddits=["tmobile"],
     ),
     "att": CarrierConfig(
@@ -26,9 +20,6 @@ CARRIER_CONFIGS: dict[str, CarrierConfig] = {
         display_name="AT&T",
         handles=["@ATT", "@ATTHelp", "@ATTBusiness"],
         keywords=["at&t", "att", "attwireless"],
-        app_store_id="306862109",
-        play_store_id="com.att.myWireless",
-        trustpilot_slug="att",
         subreddits=["ATT"],
     ),
 }

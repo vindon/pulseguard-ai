@@ -51,12 +51,12 @@ const resolvedSignal = {
   signal_id: 'e2e-resolved-0002',
   stage: 'resolved',
   sentinel: {
-    source: 'app_store',
+    source: 'reddit',
     carrier: 'tmobile',
     is_valid: true,
     validity_reason: 'eSIM activation issue.',
     content_preview: "eSIM won't activate on the new plan, tried scanning the QR code 3 times.",
-    url: 'https://example.com/app_store/e2e-resolved-0002',
+    url: 'https://example.com/reddit/e2e-resolved-0002',
     posted_at: minutesAgo(20),
     validated_at: minutesAgo(20),
   },
@@ -100,7 +100,7 @@ const escalationBrief = {
   acknowledged_at: null,
 };
 
-const ADAPTER_NAMES = ['x', 'reddit', 'google_play', 'app_store', 'trustpilot', 'quora'];
+const ADAPTER_NAMES = ['x', 'reddit'];
 
 const adapterStatus = {
   adapters: Object.fromEntries(

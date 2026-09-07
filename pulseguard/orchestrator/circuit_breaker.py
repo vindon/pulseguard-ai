@@ -98,9 +98,5 @@ adapter_circuit_breakers: dict[str, CircuitBreaker] = {
     for name in (
         "x",
         "reddit",
-        "google_play",
-        "app_store",
-        "trustpilot",
-        "quora",
     )
 }

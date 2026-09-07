@@ -41,7 +41,7 @@ class TestRawSignal:
         assert sig.adapter_metadata == {}
 
     def test_all_sources_accepted(self):
-        for src in ("x", "reddit", "google_play", "app_store", "trustpilot", "quora"):
+        for src in ("x", "reddit"):
             sig = RawSignal(**_raw_signal(source=src))
             assert sig.source == src
 
@@ -206,13 +206,13 @@ class TestEscalationBrief:
         eb = EscalationBrief(
             signal_id="sig-001",
             summary="Customer reports persistent billing overcharge for 3 months",
-            source_platform="trustpilot",
+            source_platform="x",
             carrier="verizon",
             category="Billing dispute",
             severity="P1",
             sentiment_score=-0.95,
             churn_risk=True,
-            original_post_url="https://trustpilot.com/review/verizon",
+            original_post_url="https://x.com/i/web/status/verizon",
             recommended_action="Review account billing history and issue credit if overcharge confirmed",
             escalation_trace_id="trace-010",
             escalated_at=_now(),

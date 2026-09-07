@@ -5,7 +5,7 @@ test.describe('Signal queue', () => {
     await page.goto('/queue');
     await expect(page.getByTestId('queue-row')).toHaveCount(2);
 
-    await page.getByRole('radio', { name: 'App Store' }).click();
+    await page.getByRole('radio', { name: 'Reddit' }).click();
     await expect(page.getByTestId('queue-row')).toHaveCount(1);
     await expect(page.getByText(/eSIM won't activate/)).toBeVisible();
 

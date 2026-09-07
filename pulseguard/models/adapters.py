@@ -19,7 +19,4 @@ class CarrierConfig(BaseModel):
     display_name: str  # e.g. "Verizon"
     handles: list[str]  # e.g. ["@Verizon", "@VerizonSupport"]
     keywords: list[str]  # brand-specific complaint keywords
-    app_store_id: str | None = None  # Apple App Store app ID
-    play_store_id: str | None = None  # Google Play package name
-    trustpilot_slug: str | None = None
     subreddits: list[str] = []

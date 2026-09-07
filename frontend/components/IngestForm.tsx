@@ -13,10 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const SOURCES: { value: SignalSource; label: string }[] = [
   { value: 'x', label: 'X (Twitter)' },
   { value: 'reddit', label: 'Reddit' },
-  { value: 'app_store', label: 'App Store review' },
-  { value: 'google_play', label: 'Google Play review' },
-  { value: 'trustpilot', label: 'Trustpilot review' },
-  { value: 'quora', label: 'Quora' },
 ];
 
 const CARRIERS = [
@@ -37,14 +33,14 @@ const EXAMPLES = [
   },
   {
     label: 'eSIM activation issue (likely auto-resolves)',
-    source: 'app_store' as SignalSource,
+    source: 'x' as SignalSource,
     author: 'newuser2026',
     content: "eSIM won't activate on the new plan, tried scanning the QR code 3 times. Please help.",
     carrier: 'tmobile',
   },
   {
     label: 'Positive mention (should stay low priority)',
-    source: 'trustpilot' as SignalSource,
+    source: 'reddit' as SignalSource,
     author: 'happy_switcher',
     content: 'Switched to AT&T last week and the support call to set up my new SIM was fast and painless.',
     carrier: 'att',

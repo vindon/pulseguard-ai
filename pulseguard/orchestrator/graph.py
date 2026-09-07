@@ -8,11 +8,7 @@ import json
 import uuid
 from typing import Any
 
-from pulseguard.adapters.app_store_adapter import AppStoreAdapter
-from pulseguard.adapters.google_play_adapter import GooglePlayAdapter
-from pulseguard.adapters.quora_adapter import QuoraAdapter
 from pulseguard.adapters.reddit_adapter import RedditAdapter
-from pulseguard.adapters.trustpilot_adapter import TrustpilotAdapter
 from pulseguard.adapters.x_adapter import XAdapter
 from pulseguard.config import settings
 from pulseguard.logging_config import get_logger
@@ -58,10 +54,6 @@ class PulseGuardOrchestrator:
         self._adapters = {
             "x": XAdapter(redis_client=redis),
             "reddit": RedditAdapter(),
-            "google_play": GooglePlayAdapter(),
-            "app_store": AppStoreAdapter(),
-            "trustpilot": TrustpilotAdapter(),
-            "quora": QuoraAdapter(),
         }
         self._running = False
         self._tasks: list[asyncio.Task[None]] = []
@@ -81,10 +73,6 @@ class PulseGuardOrchestrator:
             self._tasks += [
                 asyncio.create_task(self._poll_x()),
                 asyncio.create_task(self._poll_reddit()),
-                asyncio.create_task(self._poll_daily("google_play")),
-                asyncio.create_task(self._poll_daily("app_store")),
-                asyncio.create_task(self._poll_daily("trustpilot")),
-                asyncio.create_task(self._poll_daily("quora")),
             ]
         else:
             logger.warning("adapter_polling_disabled")
@@ -138,29 +126,6 @@ class PulseGuardOrchestrator:
                 logger.error("reddit_poll_error", error=str(exc))
                 await cb.record_error()
             await asyncio.sleep(300)
-
-    async def _poll_daily(self, adapter_name: str) -> None:
-        adapter = self._adapters[adapter_name]
-        cb = adapter_circuit_breakers[adapter_name]
-        interval = {
-            "google_play": 86400,
-            "app_store": 86400,
-            "trustpilot": settings.trustpilot_poll_interval_seconds,
-            "quora": settings.quora_poll_interval_seconds,
-        }.get(adapter_name, 86400)
-        while self._running:
-            if cb.is_open:
-                await asyncio.sleep(3600)
-                continue
-            try:
-                signals = await adapter.fetch()
-                for signal in signals:
-                    await self._ingest_signal(signal)
-                await cb.record_success()
-            except Exception as exc:
-                logger.error("daily_poll_error", adapter=adapter_name, error=str(exc))
-                await cb.record_error()
-            await asyncio.sleep(interval)
 
     async def _ingest_signal(self, signal: RawSignal) -> None:
         from pulseguard.agents.sentinel import process_signal

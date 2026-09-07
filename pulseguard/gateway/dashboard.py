@@ -558,9 +558,6 @@ const FEEDS = [
   { id:'all',         icon:'◉', label:'All' },
   { id:'x',           icon:'𝕏', label:'X/Twitter' },
   { id:'reddit',      icon:'●', label:'Reddit' },
-  { id:'google_play', icon:'▶', label:'Google Play' },
-  { id:'app_store',   icon:'', label:'App Store' },
-  { id:'trustpilot',  icon:'★', label:'Trustpilot' },
 ];
 const FEED_LABEL = Object.fromEntries(FEEDS.map(f=>[f.id,f.label]));
 
@@ -599,7 +596,7 @@ function badge(cls,txt){ return `<span class="badge badge-${cls}">${txt}</span>`
 function feedCntMap(c){
   const b=forCarrier(c);
   const m={all:b.length};
-  ['x','reddit','google_play','app_store','trustpilot'].forEach(f=>{ m[f]=b.filter(s=>s.sentinel?.source===f).length; });
+  ['x','reddit'].forEach(f=>{ m[f]=b.filter(s=>s.sentinel?.source===f).length; });
   return m;
 }
 

@@ -2,13 +2,7 @@
 // pulseguard/gateway/routes.py — kept as plain interfaces (not codegen)
 // since the backend doesn't publish a typed OpenAPI client.
 
-export type SignalSource =
-  | 'x'
-  | 'reddit'
-  | 'google_play'
-  | 'app_store'
-  | 'trustpilot'
-  | 'quora';
+export type SignalSource = 'x' | 'reddit';
 
 export type Stage = 'validated' | 'triaged' | 'resolved' | 'escalated' | 'unknown';
 

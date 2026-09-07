@@ -2,14 +2,16 @@
 
 **Autonomous social feed triage system for telecom CX.**
 
-PulseGuard AI continuously monitors public social signals from X (Twitter), Reddit, app store reviews, and Trustpilot for telecom customer issues. It validates signals, deduplicates them across sources, classifies issues by type and resolution tier, autonomously resolves deterministic issues (Tier 0/1), and routes complex cases to a human expert queue with structured escalation briefs.
+PulseGuard AI continuously monitors public social signals from X (Twitter) and Reddit for telecom customer issues. It validates signals, deduplicates them across sources, classifies issues by type and resolution tier, autonomously resolves deterministic issues (Tier 0/1), and routes complex cases to a human expert queue with structured escalation briefs.
+
+Source scope is deliberately narrow: an earlier build also scraped Google Play, the App Store, Trustpilot, and Quora, but those were cut — Trustpilot in particular scraped an undocumented internal API, and Quora added a paid per-query dependency for the weakest data quality of the six. X and Reddit are the two official, low-maintenance APIs that carry the real complaint volume for this use case.
 
 ---
 
 ## Architecture
 
 ```
-Social Feeds (X, Reddit, Google Play, App Store, Trustpilot)
+Social Feeds (X, Reddit)
         │
         ▼
    [SENTINEL]  ← claude-haiku-4-5

@@ -44,7 +44,7 @@ class TestRequireApiKey:
 class TestIngestRequestBounds:
     def _base(self, **overrides):
         payload = dict(
-            source="app_store",
+            source="x",
             source_id="id-1",
             author_handle="someone",
             content="short post",

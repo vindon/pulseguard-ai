@@ -79,9 +79,6 @@ this review. Score only on the actual quality of the draft response.
 _PLATFORM_CHAR_LIMITS = {
     "x": 280,
     "reddit": 10000,
-    "google_play": 350,
-    "app_store": 350,
-    "trustpilot": 500,
 }
 
 _FORMAT_SYSTEM = """You are adapting a customer support response for a specific platform.
@@ -89,8 +86,6 @@ _FORMAT_SYSTEM = """You are adapting a customer support response for a specific 
 Platform constraints:
 - x (Twitter): 280 characters max, use "^PG" at end to indicate PulseGuard drafted
 - reddit: Full markdown supported, use **bold** for steps, up to 10,000 chars
-- google_play / app_store: Plain prose, 350 chars max, no markdown
-- trustpilot: Polite prose, 500 chars max
 
 Return ONLY the formatted response, no other text."""
 
