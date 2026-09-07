@@ -1,11 +1,21 @@
 """Hard spend cap on LLM usage, checked before every agent LLM call.
 
 Two independent counters (daily, monthly) live in Redis as plain floats,
-reset naturally by TTL rather than a cron job — each increment refreshes
-the TTL to the remaining time in that period. check_budget() is called
-before an LLM invocation; record_spend() is called after, using the
-real token counts from the response's usage metadata rather than an
-estimate, so the guard tracks actual spend, not a guess.
+keyed by the current UTC calendar date / year-month so a new day or month
+starts a fresh, zero-valued key by construction — the reset happens at
+real calendar boundaries, not by sliding a TTL forward. (An earlier version
+of this module tried to reset by refreshing a fixed-window TTL on every
+write, but that pushes expiry to "now + window" on *every* call, so a
+continuously-running service that calls record_spend() at least once a
+day never lets the key expire — once a cap was hit, check_budget() would
+raise forever until someone manually cleared Redis.) The TTL still set on
+each write here is just housekeeping to eventually garbage-collect old
+date-keyed entries; it plays no role in the reset logic.
+
+check_budget() is called before an LLM invocation; record_spend() is
+called after, using the real token counts from the response's usage
+metadata rather than an estimate, so the guard tracks actual spend, not
+a guess.
 """
 
 from datetime import UTC, datetime
@@ -16,10 +26,17 @@ from pulseguard.redis_client import get_async_redis
 
 logger = get_logger(__name__)
 
-_DAILY_KEY = "pulseguard:spend:daily"
-_MONTHLY_KEY = "pulseguard:spend:monthly"
 _SECONDS_PER_DAY = 86400
-_SECONDS_PER_MONTH = 31 * _SECONDS_PER_DAY
+_DAILY_KEY_TTL_SECONDS = 2 * _SECONDS_PER_DAY
+_MONTHLY_KEY_TTL_SECONDS = 32 * _SECONDS_PER_DAY
+
+
+def _daily_key() -> str:
+    return f"pulseguard:spend:daily:{datetime.now(UTC).strftime('%Y-%m-%d')}"
+
+
+def _monthly_key() -> str:
+    return f"pulseguard:spend:monthly:{datetime.now(UTC).strftime('%Y-%m')}"
 
 
 class BudgetExceededError(Exception):
@@ -36,7 +53,7 @@ async def check_budget() -> None:
     redis = get_async_redis()
 
     if settings.daily_budget_usd_cap > 0:
-        daily_raw = await redis.get(_DAILY_KEY)
+        daily_raw = await redis.get(_daily_key())
         daily_spent = float(daily_raw) if daily_raw else 0.0
         if daily_spent > settings.daily_budget_usd_cap:
             raise BudgetExceededError(
@@ -44,7 +61,7 @@ async def check_budget() -> None:
             )
 
     if settings.monthly_budget_usd_cap > 0:
-        monthly_raw = await redis.get(_MONTHLY_KEY)
+        monthly_raw = await redis.get(_monthly_key())
         monthly_spent = float(monthly_raw) if monthly_raw else 0.0
         if monthly_spent > settings.monthly_budget_usd_cap:
             raise BudgetExceededError(
@@ -62,10 +79,12 @@ async def record_spend(model: str, input_tokens: int, output_tokens: int) -> flo
     cost = (input_tokens / 1_000_000) * input_rate + (output_tokens / 1_000_000) * output_rate
 
     redis = get_async_redis()
-    await redis.incrbyfloat(_DAILY_KEY, cost)
-    await redis.expire(_DAILY_KEY, _SECONDS_PER_DAY)
-    await redis.incrbyfloat(_MONTHLY_KEY, cost)
-    await redis.expire(_MONTHLY_KEY, _SECONDS_PER_MONTH)
+    daily_key = _daily_key()
+    monthly_key = _monthly_key()
+    await redis.incrbyfloat(daily_key, cost)
+    await redis.expire(daily_key, _DAILY_KEY_TTL_SECONDS)
+    await redis.incrbyfloat(monthly_key, cost)
+    await redis.expire(monthly_key, _MONTHLY_KEY_TTL_SECONDS)
 
     logger.info(
         "budget_guard_spend_recorded",
