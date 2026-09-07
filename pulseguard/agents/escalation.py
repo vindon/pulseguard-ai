@@ -201,36 +201,42 @@ async def park_in_queue(state: EscalationState) -> dict[str, Any]:
 async def await_ack(state: EscalationState) -> dict[str, Any]:
     """
     Interrupt node: polls Redis for human acknowledgement before completing.
-    In production this is triggered by the FastAPI /escalations/{id}/ack endpoint.
+    In production this is triggered by the FastAPI /escalations/{id}/ack endpoint,
+    which sets `acknowledged=true` on the EscalationBrief stored in the
+    `pulseguard:escalations` hash (see notify_mcp.acknowledge_escalation) — that
+    hash entry, not a separate key, is the single source of truth for ack state.
     Timeout: P1=3600s, P2=14400s, P3=86400s.
     """
     timeouts = {"P1": 3600, "P2": 14400, "P3": 86400}
     timeout = timeouts.get(state.get("severity", "P2"), 14400)
     signal_id = state["signal_id"]
 
+    import json
+
     from pulseguard.redis_client import get_async_redis
 
     redis = get_async_redis()
-    ack_key = f"pulseguard:escalation:ack:{signal_id}"
+    escalation_key = "pulseguard:escalations"
 
     start = asyncio.get_event_loop().time()
     while asyncio.get_event_loop().time() - start < timeout:
-        ack_data = await redis.get(ack_key)
-        if ack_data:
-            import json
-
-            ack = json.loads(ack_data)
-            write_audit_entry(
-                "escalation",
-                signal_id,
-                "escalation_acknowledged",
-                state.get("trace_id", ""),
-                {
-                    "acknowledged_by": ack.get("acknowledged_by"),
-                },
-            )
-            logger.info("escalation_acked", signal_id=signal_id, by=ack.get("acknowledged_by"))
-            return {"acknowledged": True}
+        brief_raw = await redis.hget(escalation_key, signal_id)
+        if brief_raw:
+            brief_data = json.loads(brief_raw)
+            if brief_data.get("acknowledged"):
+                write_audit_entry(
+                    "escalation",
+                    signal_id,
+                    "escalation_acknowledged",
+                    state.get("trace_id", ""),
+                    {
+                        "acknowledged_by": brief_data.get("acknowledged_by"),
+                    },
+                )
+                logger.info(
+                    "escalation_acked", signal_id=signal_id, by=brief_data.get("acknowledged_by")
+                )
+                return {"acknowledged": True}
         await asyncio.sleep(30)
 
     logger.warning("escalation_ack_timeout", signal_id=signal_id, severity=state.get("severity"))

@@ -23,6 +23,36 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+class _FakeAsyncRedis:
+    """Minimal in-memory stand-in for the subset of redis-py's async API this
+    pipeline touches (hset/hget/get/decr), so a test can exercise the real
+    write_escalation / acknowledge_escalation / await_ack functions against a
+    single shared store instead of mocking each of them away."""
+
+    def __init__(self) -> None:
+        self._hashes: dict[str, dict[str, str]] = {}
+        self._strings: dict[str, str] = {}
+
+    async def hset(self, name, key=None, value=None, mapping=None):  # noqa: ANN001
+        table = self._hashes.setdefault(name, {})
+        if mapping:
+            table.update({k: str(v) for k, v in mapping.items()})
+        else:
+            table[key] = value
+
+    async def hget(self, name, key):  # noqa: ANN001
+        return self._hashes.get(name, {}).get(key)
+
+    async def get(self, key):  # noqa: ANN001
+        return self._strings.get(key)
+
+    async def decr(self, key):  # noqa: ANN001
+        current = int(self._strings.get(key, "0"))
+        current -= 1
+        self._strings[key] = str(current)
+        return current
+
+
 def _make_validated_signal(raw_dict: dict, carrier: str = "att") -> ValidatedSignal:
     raw = RawSignal(**raw_dict)
     return ValidatedSignal(
@@ -160,3 +190,92 @@ class TestEscalationPath:
         mock_slack.assert_awaited_once()
         mock_email.assert_awaited_once()
         mock_write_esc.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_await_ack_sees_a_real_human_acknowledgement(self):
+        """Regression test for the ack-path key mismatch: `park_in_queue` writes
+        the EscalationBrief via the real `output_mcp.write_escalation`, a human
+        acknowledges via the real `notify_mcp.acknowledge_escalation` (the same
+        function the /escalations/{id}/ack endpoint calls), and `await_ack` must
+        see that acknowledgement by reading the same `pulseguard:escalations`
+        hash entry — not a separate, never-written key.
+        """
+        raw = _load("signal_tier2_billing.json")
+        vs = _make_validated_signal(raw, carrier="verizon")
+        tr = TriageReport(
+            signal_id=vs.signal_id,
+            category="Billing dispute",
+            resolution_tier=2,
+            severity_score=5,
+            sentiment_score=-0.95,
+            churn_risk=True,
+            routing_decision="ESCALATION",
+            routing_rationale="Billing dispute — direct escalation",
+            triage_trace_id="trace-esc-int-003",
+            triaged_at=_now(),
+        )
+
+        mock_llm = AsyncMock()
+        mock_llm.ainvoke = AsyncMock(
+            return_value=MagicMock(
+                content=json.dumps(
+                    {
+                        "summary": "Customer reports repeated billing overcharge.",
+                        "recommended_action": "Review billing history and issue credit.",
+                    }
+                )
+            )
+        )
+        fake_redis = _FakeAsyncRedis()
+
+        with (
+            patch("pulseguard.agents.escalation._MODEL", mock_llm),
+            patch("pulseguard.mcp_servers.notify_mcp.send_slack_alert", AsyncMock(return_value={"sent": True})),
+            patch("pulseguard.mcp_servers.notify_mcp.send_email_brief", AsyncMock(return_value={"sent": True})),
+            patch("pulseguard.mcp_servers.output_mcp.get_async_redis", return_value=fake_redis),
+            patch("pulseguard.mcp_servers.notify_mcp.get_async_redis", return_value=fake_redis),
+            patch("pulseguard.redis_client.get_async_redis", return_value=fake_redis),
+        ):
+            from pulseguard.agents.escalation import (
+                EscalationState,
+                assign_priority,
+                await_ack,
+                compose_brief,
+                notify,
+                park_in_queue,
+            )
+            from pulseguard.mcp_servers.notify_mcp import acknowledge_escalation
+
+            state: EscalationState = {
+                "signal_id": vs.signal_id,
+                "triage_report": tr.model_dump(),
+                "validated_signal": vs.model_dump(),
+                "attempted_resolution": None,
+                "brief_summary": "",
+                "recommended_action": "",
+                "severity": "P2",
+                "trace_id": "trace-esc-int-003",
+                "acknowledged": False,
+                "error": None,
+            }
+            state.update(await compose_brief(state))
+            state.update(await assign_priority(state))
+            await notify(state)
+            await park_in_queue(state)
+
+            # Sanity check: the brief exists but isn't acknowledged yet — this
+            # is the state a freshly-parked escalation is in before a human
+            # acts on it.
+            parked_raw = await fake_redis.hget("pulseguard:escalations", vs.signal_id)
+            assert json.loads(parked_raw)["acknowledged"] is False
+
+            # A human hits POST /escalations/{id}/ack — the real production
+            # call, not a mock.
+            ack_result = await acknowledge_escalation(vs.signal_id, "agent@pulseguard.local")
+            assert ack_result["acknowledged"] is True
+
+            # await_ack must observe that acknowledgement immediately, via the
+            # same hash entry acknowledge_escalation just wrote to.
+            result = await await_ack(state)
+
+        assert result == {"acknowledged": True}

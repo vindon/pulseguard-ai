@@ -484,8 +484,6 @@ class TestEscalationAgent:
         mock_slack = AsyncMock(return_value={"sent": True})
         mock_email = AsyncMock(return_value={"sent": True})
         mock_write = AsyncMock(return_value={"written": True})
-        mock_redis = AsyncMock()
-        mock_redis.get = AsyncMock(return_value=None)  # Not acknowledged (timeout path)
 
         with (
             patch("pulseguard.agents.escalation._MODEL", mock_llm),
@@ -559,3 +557,35 @@ class TestEscalationAgent:
         }
         result = await assign_priority(base)
         assert result["severity"] == "P2"
+
+    @pytest.mark.asyncio
+    async def test_await_ack_times_out_when_never_acknowledged(self):
+        """await_ack must poll the pulseguard:escalations hash (the entry
+        acknowledge_escalation actually mutates) and, if the acknowledged flag
+        never flips within the severity's timeout, return acknowledged=False
+        without hanging for the real timeout duration."""
+        from pulseguard.agents.escalation import await_ack
+
+        state = {
+            "signal_id": "sig-timeout-test",
+            "severity": "P1",  # 3600s timeout
+            "trace_id": "trace-timeout-001",
+        }
+
+        mock_redis = AsyncMock()
+        mock_redis.hget = AsyncMock(return_value=None)  # never acknowledged
+
+        # Fake the event loop clock so the 3600s P1 timeout elapses after one
+        # poll iteration instead of requiring a real hour of wall-clock time.
+        fake_loop = MagicMock()
+        fake_loop.time = MagicMock(side_effect=[0, 0, 4000])
+
+        with (
+            patch("pulseguard.redis_client.get_async_redis", return_value=mock_redis),
+            patch("asyncio.get_event_loop", return_value=fake_loop),
+            patch("asyncio.sleep", AsyncMock()),
+        ):
+            result = await await_ack(state)
+
+        assert result == {"acknowledged": False}
+        mock_redis.hget.assert_awaited_with("pulseguard:escalations", "sig-timeout-test")
