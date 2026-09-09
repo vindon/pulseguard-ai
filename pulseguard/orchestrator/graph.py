@@ -25,9 +25,19 @@ _consecutive_failures: dict[str, int] = {}
 _HALT_THRESHOLD = 3
 
 
-async def _dispatch_safely(coro: Any, agent: str, signal_id: str, trace_id: str) -> None:
-    """Wrapper for the downstream-agent tasks each stream consumer below
-    fires via asyncio.create_task. A task scheduled that way runs
+async def _dispatch_safely(
+    coro: Any,
+    agent: str,
+    signal_id: str,
+    trace_id: str,
+    *,
+    log_event: str = "agent_dispatch_failed",
+    audit_action: str | None = None,
+) -> None:
+    """Wrapper for every downstream-agent invocation: the stream consumers'
+    asyncio.create_task calls below, and (as of this task) sentinel's own
+    two entrypoints (_ingest_signal here, and the gateway's manual-ingest
+    background task). A task scheduled via asyncio.create_task runs
     independently of the consumer loop's own try/except — by the time a
     stream message has been read, an unwrapped failure inside
     process_validated_signal/process_triage_report/process_escalation
@@ -40,6 +50,13 @@ async def _dispatch_safely(coro: Any, agent: str, signal_id: str, trace_id: str)
     — a systemically broken pipeline (bad credentials, exceeded budget,
     a persistent schema mismatch) should stop and wait for a human, not
     fail once per signal forever.
+
+    log_event/audit_action let a caller preserve its own pre-existing
+    naming (e.g. the gateway's manual-ingest path already logged
+    "manual_ingest_processing_failed" and audited "signal_processing_failed"
+    before it was routed through here) while still getting the shared
+    failure-counting/halt behavior. They default to this function's
+    original generic naming for the stream-consumer call sites below.
     """
     from pulseguard.orchestrator.halt import halt
     from pulseguard.security.audit import write_audit_entry
@@ -50,7 +67,7 @@ async def _dispatch_safely(coro: Any, agent: str, signal_id: str, trace_id: str)
     except Exception as exc:
         _consecutive_failures[agent] = _consecutive_failures.get(agent, 0) + 1
         logger.error(
-            "agent_dispatch_failed",
+            log_event,
             agent=agent,
             signal_id=signal_id,
             trace_id=trace_id,
@@ -58,7 +75,11 @@ async def _dispatch_safely(coro: Any, agent: str, signal_id: str, trace_id: str)
             consecutive_failures=_consecutive_failures[agent],
         )
         write_audit_entry(
-            agent, signal_id, f"{agent}_dispatch_failed", trace_id, {"reason": str(exc)}
+            agent,
+            signal_id,
+            audit_action or f"{agent}_dispatch_failed",
+            trace_id,
+            {"reason": str(exc)},
         )
         if _consecutive_failures[agent] >= _HALT_THRESHOLD:
             await halt(f"{_HALT_THRESHOLD} consecutive dispatch failures for agent={agent}: {exc}")
@@ -109,6 +130,12 @@ class PulseGuardOrchestrator:
         adapter = self._adapters["x"]
         cb = adapter_circuit_breakers["x"]
         while self._running:
+            from pulseguard.orchestrator.halt import is_halted
+
+            if await is_halted():
+                logger.warning("adapter_poll_paused_halted", adapter="x")
+                await asyncio.sleep(settings.x_poll_interval_seconds)
+                continue
             if cb.is_open:
                 logger.warning("adapter_circuit_open", adapter="x")
                 await asyncio.sleep(settings.x_poll_interval_seconds)
@@ -131,6 +158,12 @@ class PulseGuardOrchestrator:
         adapter = self._adapters["reddit"]
         cb = adapter_circuit_breakers["reddit"]
         while self._running:
+            from pulseguard.orchestrator.halt import is_halted
+
+            if await is_halted():
+                logger.warning("adapter_poll_paused_halted", adapter="reddit")
+                await asyncio.sleep(300)
+                continue
             if cb.is_open:
                 await asyncio.sleep(300)
                 continue
@@ -148,13 +181,21 @@ class PulseGuardOrchestrator:
         from pulseguard.agents.sentinel import process_signal
 
         trace_id = str(uuid.uuid4())
-        await process_signal(signal, trace_id)
+        await _dispatch_safely(
+            process_signal(signal, trace_id), "sentinel", signal.signal_id, trace_id
+        )
 
     # ── Event consumers ─────────────────────────────────────────────────────
 
     async def _consume_validated_signals(self) -> None:
         while self._running:
             try:
+                from pulseguard.orchestrator.halt import is_halted
+
+                if await is_halted():
+                    logger.warning("consume_validated_paused_halted")
+                    await asyncio.sleep(5)
+                    continue
                 events = await consume_stream(
                     "pulseguard:stream:validated_signals",
                     "triage-group",
@@ -181,6 +222,12 @@ class PulseGuardOrchestrator:
     async def _consume_triage_reports(self) -> None:
         while self._running:
             try:
+                from pulseguard.orchestrator.halt import is_halted
+
+                if await is_halted():
+                    logger.warning("consume_triage_paused_halted")
+                    await asyncio.sleep(5)
+                    continue
                 events = await consume_stream(
                     "pulseguard:stream:triage_reports",
                     "routing-group",
@@ -226,6 +273,12 @@ class PulseGuardOrchestrator:
     async def _consume_escalation_needed(self) -> None:
         while self._running:
             try:
+                from pulseguard.orchestrator.halt import is_halted
+
+                if await is_halted():
+                    logger.warning("consume_escalation_paused_halted")
+                    await asyncio.sleep(5)
+                    continue
                 events = await consume_stream(
                     "pulseguard:stream:needs_escalation",
                     "escalation-group",

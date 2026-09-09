@@ -121,6 +121,28 @@ class TestSafeProcessSignal:
 
         mock_audit.assert_not_called()
 
+    @pytest.mark.asyncio
+    async def test_three_consecutive_failures_trip_the_halt(self):
+        """_safe_process_signal is now routed through _dispatch_safely so it
+        contributes to the same shared per-agent halt counter as every
+        other entrypoint — this was the gap: manual ingest used to have its
+        own inline try/except with no halt-counting at all."""
+        signal = self._signal()
+        mock_redis = AsyncMock()
+        with (
+            patch(
+                "pulseguard.agents.sentinel.process_signal",
+                new=AsyncMock(side_effect=RuntimeError("bad api key")),
+            ),
+            patch("pulseguard.orchestrator.halt.get_async_redis", return_value=mock_redis),
+            patch("pulseguard.redis_client.get_async_redis", return_value=mock_redis),
+        ):
+            for i in range(3):
+                await _safe_process_signal(signal, f"trace-halt-{i}")
+
+        halt_calls = [c for c in mock_redis.set.await_args_list if c.args[0] == "pulseguard:halted"]
+        assert len(halt_calls) == 1
+
 
 class TestHaltEndpoints:
     @pytest.mark.asyncio

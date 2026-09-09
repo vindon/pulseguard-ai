@@ -28,27 +28,29 @@ async def _safe_process_signal(signal: RawSignal, trace_id: str) -> None:
     handler at all, so any failure (a bad Anthropic response, a Redis
     hiccup) surfaced only as an unlogged "Task exception was never
     retrieved" warning while the caller had already been told 200/queued.
-    Mirrors the orchestrator's own error handling instead of dropping it.
+
+    Routed through the orchestrator's _dispatch_safely (rather than its own
+    inline try/except) so a run of failures here also counts toward the
+    shared per-agent halt threshold — this was the only sentinel entrypoint
+    that didn't feed the halt counter, which meant a systemic failure hit
+    purely through manual ingest (a bad API key, an already-exceeded budget
+    cap) would fail silently and repeatedly forever instead of halting the
+    pipeline. The log_event/audit_action overrides preserve this
+    endpoint's original naming ("manual_ingest_processing_failed" /
+    "signal_processing_failed") for anyone already searching logs/audit
+    trail for it.
     """
     from pulseguard.agents.sentinel import process_signal
-    from pulseguard.security.audit import write_audit_entry
+    from pulseguard.orchestrator.graph import _dispatch_safely
 
-    try:
-        await process_signal(signal, trace_id)
-    except Exception as exc:
-        logger.error(
-            "manual_ingest_processing_failed",
-            signal_id=signal.signal_id,
-            trace_id=trace_id,
-            error=str(exc),
-        )
-        write_audit_entry(
-            "sentinel",
-            signal.signal_id,
-            "signal_processing_failed",
-            trace_id,
-            {"reason": str(exc)},
-        )
+    await _dispatch_safely(
+        process_signal(signal, trace_id),
+        "sentinel",
+        signal.signal_id,
+        trace_id,
+        log_event="manual_ingest_processing_failed",
+        audit_action="signal_processing_failed",
+    )
 
 
 async def _build_lifecycle(signal_id: str) -> dict[str, Any]:

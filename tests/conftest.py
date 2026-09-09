@@ -21,3 +21,23 @@ def _fresh_redis_client_cache():
     get_async_redis.cache_clear()
     get_sync_redis.cache_clear()
     yield
+
+
+@pytest.fixture(autouse=True)
+def _reset_dispatch_failure_counters():
+    """_dispatch_safely's _consecutive_failures dict (orchestrator/graph.py)
+    is deliberately a module-level singleton in production, so a halt
+    persists across signals for the same agent for the process's lifetime.
+    But several tests across test_orchestrator_dispatch.py, test_gateway.py,
+    and test_orchestrator_loops.py exercise _dispatch_safely (directly or
+    via _ingest_signal/_safe_process_signal) with the same agent names
+    (e.g. "resolver", "sentinel"). Without a reset, one test's failures
+    leak into the next and can flip an unrelated test's halt assertion or
+    trigger a real (unmocked) halt()/get_async_redis() call. Cleared before
+    and after every test, process-wide.
+    """
+    from pulseguard.orchestrator import graph
+
+    graph._consecutive_failures.clear()
+    yield
+    graph._consecutive_failures.clear()
