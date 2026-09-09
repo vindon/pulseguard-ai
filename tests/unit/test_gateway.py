@@ -120,3 +120,22 @@ class TestSafeProcessSignal:
             await _safe_process_signal(signal, "trace-2")
 
         mock_audit.assert_not_called()
+
+
+class TestHaltEndpoints:
+    @pytest.mark.asyncio
+    async def test_get_halt_status_when_not_halted(self):
+        from pulseguard.gateway.routes import get_halt_status
+
+        with patch("pulseguard.orchestrator.halt.is_halted", AsyncMock(return_value=False)):
+            result = await get_halt_status()
+        assert result == {"halted": False}
+
+    @pytest.mark.asyncio
+    async def test_clear_halt_endpoint_calls_clear_halt(self):
+        from pulseguard.gateway.routes import clear_halt_endpoint
+
+        with patch("pulseguard.orchestrator.halt.clear_halt", AsyncMock()) as mock_clear:
+            result = await clear_halt_endpoint()
+        mock_clear.assert_awaited_once()
+        assert result == {"halted": False}

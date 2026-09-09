@@ -166,6 +166,14 @@ async def ingest_signal(request: Request, req: IngestRequest) -> dict[str, Any]:
     Rate-limited: each call fans out to all four LLM agents, so this is
     also the API's main cost/abuse surface, not just a traffic concern.
     """
+    from pulseguard.orchestrator.halt import is_halted
+
+    if await is_halted():
+        raise HTTPException(
+            status_code=503,
+            detail="PulseGuard is halted pending human review — see GET /api/v1/admin/halt",
+        )
+
     signal = RawSignal(
         signal_id=str(uuid.uuid4()),
         source=req.source,
@@ -321,3 +329,24 @@ async def orchestrator_status() -> dict[str, Any]:
     from pulseguard.orchestrator.graph import orchestrator
 
     return await orchestrator.get_status()
+
+
+@router.get("/admin/halt", dependencies=[Depends(require_api_key)])
+async def get_halt_status() -> dict[str, Any]:
+    from pulseguard.orchestrator.halt import is_halted
+    from pulseguard.redis_client import get_async_redis
+
+    if not await is_halted():
+        return {"halted": False}
+    redis = get_async_redis()
+    raw = await redis.get("pulseguard:halted")
+    return {"halted": True, "detail": json.loads(raw) if raw else None}
+
+
+@router.post("/admin/halt/clear", dependencies=[Depends(require_api_key)])
+async def clear_halt_endpoint() -> dict[str, Any]:
+    from pulseguard.orchestrator.halt import clear_halt
+
+    await clear_halt()
+    logger.warning("orchestrator_halt_cleared_by_human")
+    return {"halted": False}

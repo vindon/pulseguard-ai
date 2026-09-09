@@ -21,6 +21,10 @@ from pulseguard.redis_client import get_async_redis
 logger = get_logger(__name__)
 
 
+_consecutive_failures: dict[str, int] = {}
+_HALT_THRESHOLD = 3
+
+
 async def _dispatch_safely(coro: Any, agent: str, signal_id: str, trace_id: str) -> None:
     """Wrapper for the downstream-agent tasks each stream consumer below
     fires via asyncio.create_task. A task scheduled that way runs
@@ -30,22 +34,35 @@ async def _dispatch_safely(coro: Any, agent: str, signal_id: str, trace_id: str)
     was previously silent except for an unlogged "Task exception was
     never retrieved" warning, and the signal just vanished with no audit
     trail (found via the /signals/ingest version of this same gap).
+
+    A third consecutive failure for the same agent trips a system-wide
+    halt (pulseguard.orchestrator.halt) instead of retrying indefinitely
+    — a systemically broken pipeline (bad credentials, exceeded budget,
+    a persistent schema mismatch) should stop and wait for a human, not
+    fail once per signal forever.
     """
+    from pulseguard.orchestrator.halt import halt
     from pulseguard.security.audit import write_audit_entry
 
     try:
         await coro
+        _consecutive_failures[agent] = 0
     except Exception as exc:
+        _consecutive_failures[agent] = _consecutive_failures.get(agent, 0) + 1
         logger.error(
             "agent_dispatch_failed",
             agent=agent,
             signal_id=signal_id,
             trace_id=trace_id,
             error=str(exc),
+            consecutive_failures=_consecutive_failures[agent],
         )
         write_audit_entry(
             agent, signal_id, f"{agent}_dispatch_failed", trace_id, {"reason": str(exc)}
         )
+        if _consecutive_failures[agent] >= _HALT_THRESHOLD:
+            await halt(f"{_HALT_THRESHOLD} consecutive dispatch failures for agent={agent}: {exc}")
+            logger.error("orchestrator_halted", agent=agent, reason=str(exc))
 
 
 class PulseGuardOrchestrator:
