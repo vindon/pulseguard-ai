@@ -98,12 +98,16 @@ class TestInvokeWithBudgetGuard:
 
         with (
             patch("pulseguard.agents.llm_guard.check_budget", AsyncMock()),
-            patch("pulseguard.agents.llm_guard.record_spend", AsyncMock(return_value=0.001)) as mock_record,
+            patch(
+                "pulseguard.agents.llm_guard.record_spend", AsyncMock(return_value=0.001)
+            ) as mock_record,
         ):
             result = await invoke_with_budget_guard(mock_model, [], model_name="claude-haiku-4-5")
 
         assert result is mock_response
-        mock_record.assert_awaited_once_with("claude-haiku-4-5", input_tokens=500, output_tokens=100)
+        mock_record.assert_awaited_once_with(
+            "claude-haiku-4-5", input_tokens=500, output_tokens=100
+        )
 
     @pytest.mark.asyncio
     async def test_missing_usage_metadata_records_zero_without_raising(self):
@@ -370,6 +374,34 @@ class TestTriageAgent:
         assert state["routing_decision"] == "ESCALATION"
         assert state["churn_risk"] is True
 
+    @pytest.mark.asyncio
+    async def test_budget_exceeded_propagates_instead_of_falling_back(self):
+        from pulseguard.security.budget_guard import BudgetExceededError
+
+        vs = _make_validated(_load_fixture("signal_tier0_esim.json"), carrier="verizon")
+
+        mock_llm = AsyncMock()
+        mock_llm.ainvoke = AsyncMock(side_effect=BudgetExceededError("daily cap exceeded"))
+
+        with patch("pulseguard.agents.triage._MODEL", mock_llm):
+            from pulseguard.agents.triage import TriageState, classify_issue_type
+
+            state: TriageState = {
+                "validated_signal": vs.model_dump(),
+                "category": "",
+                "resolution_tier": 2,
+                "severity_score": 3,
+                "sentiment_score": 0.0,
+                "churn_risk": False,
+                "routing_decision": "ESCALATION",
+                "routing_rationale": "",
+                "kb_context": None,
+                "trace_id": "trace-triage-003",
+                "error": None,
+            }
+            with pytest.raises(BudgetExceededError):
+                await classify_issue_type(state)
+
 
 # ── RESOLVER ───────────────────────────────────────────────────────────────
 
@@ -578,6 +610,34 @@ class TestEscalationAgent:
         mock_slack.assert_awaited_once()
         mock_email.assert_awaited_once()
         mock_write.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_budget_exceeded_propagates_instead_of_falling_back(self):
+        from pulseguard.security.budget_guard import BudgetExceededError
+
+        vs = _make_validated(_load_fixture("signal_tier2_billing.json"), carrier="verizon")
+        tr = _make_triage(vs.signal_id, "Billing dispute", 2, "ESCALATION")
+
+        mock_llm = AsyncMock()
+        mock_llm.ainvoke = AsyncMock(side_effect=BudgetExceededError("monthly cap exceeded"))
+
+        with patch("pulseguard.agents.escalation._MODEL", mock_llm):
+            from pulseguard.agents.escalation import EscalationState, compose_brief
+
+            state: EscalationState = {
+                "signal_id": vs.signal_id,
+                "triage_report": tr.model_dump(),
+                "validated_signal": vs.model_dump(),
+                "attempted_resolution": None,
+                "brief_summary": "",
+                "recommended_action": "",
+                "severity": "P2",
+                "trace_id": "trace-esc-002",
+                "acknowledged": False,
+                "error": None,
+            }
+            with pytest.raises(BudgetExceededError):
+                await compose_brief(state)
 
     @pytest.mark.asyncio
     async def test_priority_assignment_rules(self):

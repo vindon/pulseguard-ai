@@ -19,6 +19,7 @@ from pulseguard.logging_config import get_logger
 from pulseguard.models.escalation import EscalationBrief
 from pulseguard.models.triage import TriageReport
 from pulseguard.security.audit import write_audit_entry
+from pulseguard.security.budget_guard import BudgetExceededError
 from pulseguard.tracing import node_trace
 
 logger = get_logger(__name__)
@@ -120,6 +121,8 @@ async def compose_brief(state: EscalationState) -> dict[str, Any]:
             "recommended_action": result.get("recommended_action", ""),
             "error": None,
         }
+    except BudgetExceededError:
+        raise
     except Exception as exc:
         logger.error("escalation_compose_error", error=str(exc))
         return {

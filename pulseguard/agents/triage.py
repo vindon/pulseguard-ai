@@ -19,6 +19,7 @@ from pulseguard.logging_config import get_logger
 from pulseguard.models.signals import ValidatedSignal
 from pulseguard.models.triage import TriageReport
 from pulseguard.security.audit import write_audit_entry
+from pulseguard.security.budget_guard import BudgetExceededError
 from pulseguard.tracing import node_trace
 
 logger = get_logger(__name__)
@@ -141,6 +142,8 @@ async def classify_issue_type(state: TriageState) -> dict[str, Any]:
             "routing_rationale": result.get("routing_rationale", ""),
             "error": None,
         }
+    except BudgetExceededError:
+        raise
     except Exception as exc:
         logger.error("triage_classify_error", error=str(exc))
         return {
