@@ -47,6 +47,21 @@ def _sample_resolution() -> dict:
     )
 
 
+def _sample_pending_draft() -> dict:
+    return dict(
+        signal_id="sig-draft-001",
+        carrier="verizon",
+        category="Billing dispute",
+        severity="P2",
+        source_platform="x",
+        source_url="https://x.com/i/web/status/sig-draft-001",
+        draft_text="Hi! I'm sorry about the billing confusion — I've credited the extra charge.",
+        confidence_score=0.88,
+        status="pending",
+        created_at=_now_iso(),
+    )
+
+
 # ── feed_mcp ───────────────────────────────────────────────────────────────
 
 
@@ -421,7 +436,10 @@ class TestEnterpriseIntegrations:
             return httpx.Response(200, json={"ok": True})
 
         with (
-            patch("pulseguard.mcp_servers.notify_mcp.settings.webhook_url", "https://hooks.example.com/pg"),
+            patch(
+                "pulseguard.mcp_servers.notify_mcp.settings.webhook_url",
+                "https://hooks.example.com/pg",
+            ),
             patch("pulseguard.mcp_servers.notify_mcp.settings.webhook_secret", "shh"),
             respx.mock,
         ):
@@ -458,7 +476,9 @@ class TestEnterpriseIntegrations:
 
         assert result["sent"] is True
         sent_body = json.loads(route.calls[0].request.content)
-        assert sent_body["attachments"][0]["contentType"] == "application/vnd.microsoft.card.adaptive"
+        assert (
+            sent_body["attachments"][0]["contentType"] == "application/vnd.microsoft.card.adaptive"
+        )
 
     @pytest.mark.asyncio
     async def test_zendesk_ticket_not_configured(self):
@@ -515,3 +535,80 @@ class TestEnterpriseIntegrations:
         sent = json.loads(route.calls[0].request.content)
         assert sent["unique_external_id"] == "pulseguard-sig-001"
         assert "email" not in sent
+
+
+class TestDraftQueue:
+    @pytest.mark.asyncio
+    async def test_write_pending_draft_happy_path(self):
+        from pulseguard.mcp_servers.output_mcp import write_pending_draft
+
+        mock_redis = AsyncMock()
+        with patch("pulseguard.mcp_servers.output_mcp.get_async_redis", return_value=mock_redis):
+            result = await write_pending_draft(_sample_pending_draft())
+
+        assert result == {"written": True, "signal_id": "sig-draft-001"}
+        mock_redis.hset.assert_awaited_once()
+        args, _ = mock_redis.hset.call_args
+        assert args[0] == "pulseguard:pending_drafts"
+        assert args[1] == "sig-draft-001"
+
+    @pytest.mark.asyncio
+    async def test_list_pending_drafts_filters_by_status(self):
+        from pulseguard.mcp_servers.output_mcp import list_pending_drafts
+
+        pending = _sample_pending_draft()
+        approved = _sample_pending_draft()
+        approved["signal_id"] = "sig-draft-002"
+        approved["status"] = "approved"
+
+        mock_redis = AsyncMock()
+        mock_redis.hgetall = AsyncMock(
+            return_value={
+                "sig-draft-001": json.dumps(pending),
+                "sig-draft-002": json.dumps(approved),
+            }
+        )
+        with patch("pulseguard.mcp_servers.output_mcp.get_async_redis", return_value=mock_redis):
+            result = await list_pending_drafts(status="pending")
+
+        assert result["count"] == 1
+        assert result["drafts"][0]["signal_id"] == "sig-draft-001"
+
+    @pytest.mark.asyncio
+    async def test_list_pending_drafts_no_filter_returns_all(self):
+        from pulseguard.mcp_servers.output_mcp import list_pending_drafts
+
+        mock_redis = AsyncMock()
+        mock_redis.hgetall = AsyncMock(
+            return_value={"sig-draft-001": json.dumps(_sample_pending_draft())}
+        )
+        with patch("pulseguard.mcp_servers.output_mcp.get_async_redis", return_value=mock_redis):
+            result = await list_pending_drafts()
+
+        assert result["count"] == 1
+
+    @pytest.mark.asyncio
+    async def test_update_draft_status_happy_path(self):
+        from pulseguard.mcp_servers.output_mcp import update_draft_status
+
+        mock_redis = AsyncMock()
+        mock_redis.hget = AsyncMock(return_value=json.dumps(_sample_pending_draft()))
+        with patch("pulseguard.mcp_servers.output_mcp.get_async_redis", return_value=mock_redis):
+            result = await update_draft_status("sig-draft-001", "approved")
+
+        assert result["status"] == "approved"
+        mock_redis.hset.assert_awaited_once()
+        written = json.loads(mock_redis.hset.call_args.args[2])
+        assert written["status"] == "approved"
+        assert written["reviewed_at"] is not None
+
+    @pytest.mark.asyncio
+    async def test_update_draft_status_not_found(self):
+        from pulseguard.mcp_servers.output_mcp import update_draft_status
+
+        mock_redis = AsyncMock()
+        mock_redis.hget = AsyncMock(return_value=None)
+        with patch("pulseguard.mcp_servers.output_mcp.get_async_redis", return_value=mock_redis):
+            result = await update_draft_status("sig-missing", "approved")
+
+        assert result["code"] == "NOT_FOUND"

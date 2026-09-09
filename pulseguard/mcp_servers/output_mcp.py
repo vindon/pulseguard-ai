@@ -6,6 +6,7 @@ from fastmcp import FastMCP
 from pydantic import BaseModel
 
 from pulseguard.logging_config import configure_logging, get_logger
+from pulseguard.models.drafts import PendingDraft
 from pulseguard.models.escalation import EscalationBrief
 from pulseguard.models.resolution import ResolutionRecord
 from pulseguard.redis_client import get_async_redis
@@ -19,6 +20,7 @@ mcp = FastMCP("pulseguard-output-mcp")
 _RESOLUTION_KEY = "pulseguard:resolutions"
 _ESCALATION_KEY = "pulseguard:escalations"
 _SIGNAL_STATUS_KEY_PREFIX = "pulseguard:signal:status:"
+_PENDING_DRAFTS_KEY = "pulseguard:pending_drafts"
 
 
 class SignalStatus(BaseModel):
@@ -84,6 +86,62 @@ async def write_escalation(signal_id: str, brief: dict[str, Any]) -> dict[str, A
         return {"written": True, "signal_id": signal_id}
     except Exception as exc:
         logger.error("write_escalation_error", signal_id=signal_id, error=str(exc))
+        return ErrorResponse(error=str(exc), code="WRITE_ERROR").model_dump()
+
+
+@mcp.tool()
+@tool_trace("output", "write_pending_draft")
+async def write_pending_draft(draft: dict[str, Any]) -> dict[str, Any]:
+    """Persist a PendingDraft — the copilot's core review-queue unit."""
+    try:
+        pd = PendingDraft(**draft)
+        redis = get_async_redis()
+        await redis.hset(_PENDING_DRAFTS_KEY, pd.signal_id, pd.model_dump_json())
+        return {"written": True, "signal_id": pd.signal_id}
+    except Exception as exc:
+        logger.error("write_pending_draft_error", error=str(exc))
+        return ErrorResponse(error=str(exc), code="WRITE_ERROR").model_dump()
+
+
+@mcp.tool()
+@tool_trace("output", "list_pending_drafts")
+async def list_pending_drafts(status: str | None = None) -> dict[str, Any]:
+    """List drafts in the review queue, optionally filtered by status."""
+    try:
+        redis = get_async_redis()
+        all_raw = await redis.hgetall(_PENDING_DRAFTS_KEY)
+        drafts = [json.loads(v) for v in all_raw.values()]
+        if status:
+            drafts = [d for d in drafts if d.get("status") == status]
+        drafts.sort(key=lambda d: d.get("created_at", ""), reverse=True)
+        return {"drafts": drafts, "count": len(drafts)}
+    except Exception as exc:
+        logger.error("list_pending_drafts_error", error=str(exc))
+        return ErrorResponse(error=str(exc), code="READ_ERROR").model_dump()
+
+
+@mcp.tool()
+@tool_trace("output", "update_draft_status")
+async def update_draft_status(
+    signal_id: str, status: str, reviewed_by: str | None = None
+) -> dict[str, Any]:
+    """Mark a PendingDraft approved or rejected. Does not publish anything —
+    Task 10 wires the actual publish call separately, after this write."""
+    try:
+        redis = get_async_redis()
+        raw = await redis.hget(_PENDING_DRAFTS_KEY, signal_id)
+        if not raw:
+            return ErrorResponse(
+                error=f"Draft {signal_id} not found", code="NOT_FOUND"
+            ).model_dump()
+        pd = PendingDraft(**json.loads(raw))
+        pd.status = status  # type: ignore[assignment]
+        pd.reviewed_at = datetime.now(UTC)
+        pd.reviewed_by = reviewed_by
+        await redis.hset(_PENDING_DRAFTS_KEY, signal_id, pd.model_dump_json())
+        return pd.model_dump(mode="json")
+    except Exception as exc:
+        logger.error("update_draft_status_error", error=str(exc))
         return ErrorResponse(error=str(exc), code="WRITE_ERROR").model_dump()
 
 
