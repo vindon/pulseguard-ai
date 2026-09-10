@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     x_monthly_cap: int = 15000
     x_poll_interval_seconds: int = 300
 
+    # X publishing — separate, user-context OAuth 1.0a credentials from
+    # x_bearer_token above (that one is app-only/read-only search; posting
+    # a reply requires the connected account's own signing credentials).
+    x_api_key: str = ""
+    x_api_secret: str = ""
+    x_access_token: str = ""
+    x_access_token_secret: str = ""
+
     # Reddit
     reddit_client_id: str = ""
     reddit_client_secret: str = ""

@@ -47,6 +47,7 @@ dependencies = [
     "tenacity>=8.3,<9",
     "pybloom-live>=4.0,<5",
     "schedule>=1.2,<2",
+    "requests-oauthlib>=2.0.0",
 ]
 
 [project.optional-dependencies]
