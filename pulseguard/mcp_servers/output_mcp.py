@@ -106,11 +106,23 @@ async def write_pending_draft(draft: dict[str, Any]) -> dict[str, Any]:
 @mcp.tool()
 @tool_trace("output", "list_pending_drafts")
 async def list_pending_drafts(status: str | None = None) -> dict[str, Any]:
-    """List drafts in the review queue, optionally filtered by status."""
+    """List drafts in the review queue, optionally filtered by status.
+
+    Malformed records (invalid JSON) are skipped with a warning log; the queue
+    is still returned with all valid records to ensure no draft is hidden."""
     try:
         redis = get_async_redis()
         all_raw = await redis.hgetall(_PENDING_DRAFTS_KEY)
-        drafts = [json.loads(v) for v in all_raw.values()]
+        drafts = []
+        for signal_id, raw_val in all_raw.items():
+            try:
+                drafts.append(json.loads(raw_val))
+            except json.JSONDecodeError as e:
+                logger.warning(
+                    "list_pending_drafts_malformed_record",
+                    signal_id=signal_id,
+                    error=str(e),
+                )
         if status:
             drafts = [d for d in drafts if d.get("status") == status]
         drafts.sort(key=lambda d: d.get("created_at", ""), reverse=True)

@@ -612,3 +612,70 @@ class TestDraftQueue:
             result = await update_draft_status("sig-missing", "approved")
 
         assert result["code"] == "NOT_FOUND"
+
+    @pytest.mark.asyncio
+    async def test_list_pending_drafts_skips_malformed_json(self):
+        """One malformed (non-JSON) record should not blank out the entire queue."""
+        from pulseguard.mcp_servers.output_mcp import list_pending_drafts
+
+        good_draft = _sample_pending_draft()
+        mock_redis = AsyncMock()
+        mock_redis.hgetall = AsyncMock(
+            return_value={
+                "sig-draft-001": json.dumps(good_draft),
+                "sig-draft-bad": "not valid json {{{",
+                "sig-draft-002": json.dumps(_sample_pending_draft()),
+            }
+        )
+        with patch("pulseguard.mcp_servers.output_mcp.get_async_redis", return_value=mock_redis):
+            result = await list_pending_drafts()
+
+        # Should return the 2 good drafts, not error out
+        assert result["count"] == 2
+        assert len(result["drafts"]) == 2
+        signal_ids = {d["signal_id"] for d in result["drafts"]}
+        assert "sig-draft-bad" not in signal_ids
+        assert "sig-draft-001" in signal_ids or "sig-draft-002" in signal_ids
+
+    @pytest.mark.asyncio
+    async def test_update_draft_status_preserves_all_fields(self):
+        """Status update should preserve draft_text, confidence_score, carrier, etc."""
+        from pulseguard.mcp_servers.output_mcp import update_draft_status
+
+        original_draft = _sample_pending_draft()
+        original_draft["draft_text"] = "Original response text"
+        original_draft["confidence_score"] = 0.92
+        original_draft["carrier"] = "verizon"
+        original_draft["category"] = "Billing dispute"
+        original_draft["source_platform"] = "x"
+        original_draft["source_url"] = "https://x.com/status"
+
+        mock_redis = AsyncMock()
+        mock_redis.hget = AsyncMock(return_value=json.dumps(original_draft))
+        with patch("pulseguard.mcp_servers.output_mcp.get_async_redis", return_value=mock_redis):
+            result = await update_draft_status("sig-draft-001", "approved", reviewed_by="reviewer1")
+
+        # Verify all original fields are preserved
+        assert result["draft_text"] == "Original response text"
+        assert result["confidence_score"] == 0.92
+        assert result["carrier"] == "verizon"
+        assert result["category"] == "Billing dispute"
+        assert result["source_platform"] == "x"
+        assert result["source_url"] == "https://x.com/status"
+        # And status was actually updated
+        assert result["status"] == "approved"
+        assert result["reviewed_by"] == "reviewer1"
+        assert result["reviewed_at"] is not None
+
+    @pytest.mark.asyncio
+    async def test_list_pending_drafts_empty_queue(self):
+        """Empty hash should return empty drafts list, not an error."""
+        from pulseguard.mcp_servers.output_mcp import list_pending_drafts
+
+        mock_redis = AsyncMock()
+        mock_redis.hgetall = AsyncMock(return_value={})
+        with patch("pulseguard.mcp_servers.output_mcp.get_async_redis", return_value=mock_redis):
+            result = await list_pending_drafts()
+
+        assert result["count"] == 0
+        assert result["drafts"] == []
