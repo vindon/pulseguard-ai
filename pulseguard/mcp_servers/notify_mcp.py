@@ -395,9 +395,7 @@ async def send_freshdesk_ticket(brief: dict[str, Any]) -> dict[str, Any]:
         }
         url = f"https://{settings.freshdesk_domain}.freshdesk.com/api/v2/tickets"
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(
-                url, json=ticket, auth=(settings.freshdesk_api_key, "X")
-            )
+            resp = await client.post(url, json=ticket, auth=(settings.freshdesk_api_key, "X"))
             resp.raise_for_status()
         ticket_id = resp.json().get("id")
         logger.info("freshdesk_ticket_created", signal_id=eb.signal_id, ticket_id=ticket_id)
