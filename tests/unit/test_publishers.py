@@ -33,11 +33,19 @@ class TestXPublisher:
         assert body["reply"]["in_reply_to_tweet_id"] == "123"
 
         # Verify the request was actually OAuth 1.0a signed, not just sent.
+        # Assert all six required OAuth 1.0a params so a future regression
+        # (e.g. signature_method silently drifting off HMAC-SHA1, or nonce/
+        # timestamp being dropped) fails loudly here instead of only at
+        # real-pilot publish time.
         auth_header = sent.headers.get("authorization", "")
         assert "OAuth " in auth_header
         assert "oauth_consumer_key=" in auth_header
         assert "oauth_signature=" in auth_header
         assert "oauth_token=" in auth_header
+        assert "oauth_nonce=" in auth_header
+        assert "oauth_timestamp=" in auth_header
+        assert 'oauth_version="1.0"' in auth_header
+        assert 'oauth_signature_method="HMAC-SHA1"' in auth_header
 
     @pytest.mark.asyncio
     async def test_missing_credentials_raises_publish_error(self):
