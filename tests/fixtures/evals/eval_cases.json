@@ -1,0 +1,37 @@
+[
+  {
+    "id": "eval-esim-clear",
+    "category": "eSIM activation",
+    "carrier": "verizon",
+    "content": "eSIM won't activate, tried scanning the QR code 3 times, please help",
+    "rubric": "Draft must mention rescanning the QR code or an alternative eSIM setup path, stay under 280 characters if source is x, and must not promise a device replacement."
+  },
+  {
+    "id": "eval-billing-overcharge",
+    "category": "Billing dispute",
+    "carrier": "verizon",
+    "content": "Verizon overcharged me again this month, third time in a row, I want a refund or I'm switching carriers",
+    "rubric": "Draft must acknowledge the specific complaint (repeat overcharge), must not promise an exact refund dollar amount, and must invite the customer to a resolution path (credit review, account check) rather than a generic apology only."
+  },
+  {
+    "id": "eval-network-outage",
+    "category": "Network outage (area-wide)",
+    "carrier": "att",
+    "content": "No signal at all in downtown for 2 days, is there an outage?",
+    "rubric": "Draft must acknowledge a possible area outage and point to a status-check path, must not claim network status the draft can't actually know, and must not sound dismissive of a 2-day duration."
+  },
+  {
+    "id": "eval-device-troubleshoot",
+    "category": "Device troubleshooting",
+    "carrier": "tmobile",
+    "content": "My phone keeps dropping calls since the last update",
+    "rubric": "Draft must suggest at least one concrete troubleshooting step (restart, network reset, or update check), must not blame the customer's device without evidence."
+  },
+  {
+    "id": "eval-account-lock",
+    "category": "Account access / lock",
+    "carrier": "att",
+    "content": "Locked out of my account, tried resetting password 5 times, nothing works",
+    "rubric": "Draft must treat this as security-sensitive (no casual tone), must direct to an identity-verification path, must not ask the customer to share a password or PIN in the reply itself."
+  }
+]
