@@ -20,7 +20,7 @@ from pulseguard.logging_config import get_logger
 from pulseguard.models.resolution import ResolutionRecord
 from pulseguard.models.triage import TriageReport
 from pulseguard.security.audit import write_audit_entry
-from pulseguard.security.output_screen import screen_draft
+from pulseguard.security.output_screen import ScreenResult, screen_draft
 from pulseguard.tracing import node_trace
 
 logger = get_logger(__name__)
@@ -273,7 +273,14 @@ async def emit_resolved(state: ResolverState) -> dict[str, Any]:
     from pulseguard.mcp_servers.output_mcp import write_pending_draft
     from pulseguard.models.drafts import PendingDraft
 
-    screen_result = await screen_draft(record.draft_response, category)
+    try:
+        screen_result = await screen_draft(record.draft_response, category)
+    except Exception as exc:
+        # screen_draft already fails open internally, but a failed draft must
+        # NEVER block the PendingDraft write (spec §9) — so this is a second,
+        # defensive layer in case the call itself blows up unexpectedly.
+        logger.error("resolver_screen_call_failed", error=str(exc))
+        screen_result = ScreenResult(passed=False, reasons=[f"Screening unavailable: {exc}"])
 
     pending_draft = PendingDraft(
         signal_id=signal_id,

@@ -627,6 +627,97 @@ class TestResolverAgent:
         assert written["confidence_score"] == 0.4
         assert written["source_url"] == "https://reddit.com/r/att/sig-002"
 
+    @pytest.mark.asyncio
+    async def test_emit_resolved_still_writes_pending_draft_when_screen_flags_it(self):
+        """A failed screen must never block the draft from reaching the human
+        queue (spec §9) — it only sets screen_flag so the reviewer sees the
+        concern before approving. This guards against a future regression
+        such as an `if screen_result.passed:` gate around the write."""
+        from pulseguard.agents.resolver import emit_resolved
+
+        state = {
+            "triage_report": {
+                "signal_id": "sig-003",
+                "category": "Billing dispute",
+                "severity_score": 2,
+            },
+            "validated_signal": {
+                "detected_carrier": "verizon",
+                "raw": {"source": "x", "url": "https://x.com/i/web/status/sig-003"},
+            },
+            "formatted_response": "I'll refund you $500 right now!",
+            "draft_response": "",
+            "confidence_score": 0.9,
+            "resolved": True,
+            "escalation_reason": None,
+            "trace_id": "trace-003",
+        }
+        mock_write_draft = AsyncMock(return_value={"written": True})
+        with (
+            patch(
+                "pulseguard.mcp_servers.output_mcp.write_resolution",
+                AsyncMock(return_value={"written": True}),
+            ),
+            patch("pulseguard.mcp_servers.output_mcp.write_pending_draft", mock_write_draft),
+            patch(
+                "pulseguard.agents.resolver.screen_draft",
+                AsyncMock(
+                    return_value=ScreenResult(
+                        passed=False, reasons=["Promises a specific refund amount"]
+                    )
+                ),
+            ),
+        ):
+            await emit_resolved(state)
+
+        mock_write_draft.assert_awaited_once()
+        written = mock_write_draft.call_args.args[0]
+        assert written["screen_flag"] == "Promises a specific refund amount"
+
+    @pytest.mark.asyncio
+    async def test_emit_resolved_still_writes_pending_draft_when_screening_errors(self):
+        """If screen_draft itself raises (not just returns passed=False),
+        emit_resolved must not propagate the exception — the PendingDraft
+        write must still happen. This is the fail-open guarantee exercised
+        at the point it actually matters (inside the agent, with a genuinely
+        raised exception), not just inside screen_draft in isolation."""
+        from pulseguard.agents.resolver import emit_resolved
+
+        state = {
+            "triage_report": {
+                "signal_id": "sig-004",
+                "category": "Device troubleshooting",
+                "severity_score": 2,
+            },
+            "validated_signal": {
+                "detected_carrier": "att",
+                "raw": {"source": "reddit", "url": "https://reddit.com/r/att/sig-004"},
+            },
+            "formatted_response": "Try a network reset in Settings.",
+            "draft_response": "",
+            "confidence_score": 0.9,
+            "resolved": True,
+            "escalation_reason": None,
+            "trace_id": "trace-004",
+        }
+        mock_write_draft = AsyncMock(return_value={"written": True})
+        with (
+            patch(
+                "pulseguard.mcp_servers.output_mcp.write_resolution",
+                AsyncMock(return_value={"written": True}),
+            ),
+            patch("pulseguard.mcp_servers.output_mcp.write_pending_draft", mock_write_draft),
+            patch(
+                "pulseguard.agents.resolver.screen_draft",
+                AsyncMock(side_effect=RuntimeError("model unavailable")),
+            ),
+        ):
+            await emit_resolved(state)
+
+        mock_write_draft.assert_awaited_once()
+        written = mock_write_draft.call_args.args[0]
+        assert written["screen_flag"] == "Screening unavailable: model unavailable"
+
 
 # ── ESCALATION ─────────────────────────────────────────────────────────────
 
