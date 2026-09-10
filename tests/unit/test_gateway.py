@@ -197,3 +197,71 @@ class TestDraftEndpoints:
             with pytest.raises(HTTPException) as exc:
                 await reject_draft("sig-missing", DraftReviewRequest(reviewed_by="vinoth"))
         assert exc.value.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_approve_draft_publishes_and_marks_approved(self):
+        from pulseguard.gateway.routes import DraftReviewRequest, approve_draft
+
+        draft = {
+            "signal_id": "sig-1",
+            "carrier": "verizon",
+            "category": "eSIM activation",
+            "source_platform": "x",
+            "source_url": "https://x.com/i/web/status/999",
+            "draft_text": "Try Settings > Cellular > Add eSIM.",
+            "confidence_score": 0.9,
+            "status": "pending",
+            "created_at": "2026-09-07T00:00:00+00:00",
+        }
+        mock_list = AsyncMock(return_value={"drafts": [draft], "count": 1})
+        mock_publish = AsyncMock(return_value={"posted": True, "tweet_id": "999"})
+        mock_update = AsyncMock(return_value={**draft, "status": "approved"})
+
+        with (
+            patch("pulseguard.mcp_servers.output_mcp.list_pending_drafts", mock_list),
+            patch("pulseguard.publishers.x_publisher.post_reply", mock_publish),
+            patch("pulseguard.mcp_servers.output_mcp.update_draft_status", mock_update),
+        ):
+            result = await approve_draft("sig-1", DraftReviewRequest(reviewed_by="vinoth"))
+
+        mock_publish.assert_awaited_once_with(
+            in_reply_to_tweet_id="999", text="Try Settings > Cellular > Add eSIM."
+        )
+        assert result["status"] == "approved"
+
+    @pytest.mark.asyncio
+    async def test_approve_draft_not_found_raises_404(self):
+        from pulseguard.gateway.routes import DraftReviewRequest, approve_draft
+
+        mock_list = AsyncMock(return_value={"drafts": [], "count": 0})
+        with patch("pulseguard.mcp_servers.output_mcp.list_pending_drafts", mock_list):
+            with pytest.raises(HTTPException) as exc:
+                await approve_draft("sig-missing", DraftReviewRequest(reviewed_by="vinoth"))
+        assert exc.value.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_approve_draft_publish_failure_returns_502_and_leaves_draft_pending(self):
+        from pulseguard.gateway.routes import DraftReviewRequest, approve_draft
+        from pulseguard.publishers.x_publisher import PublishError
+
+        draft = {
+            "signal_id": "sig-1",
+            "source_platform": "x",
+            "source_url": "https://x.com/i/web/status/999",
+            "draft_text": "draft",
+            "status": "pending",
+        }
+        mock_list = AsyncMock(return_value={"drafts": [draft], "count": 1})
+        mock_publish = AsyncMock(side_effect=PublishError("X API error 403"))
+        mock_update = AsyncMock()
+
+        with (
+            patch("pulseguard.mcp_servers.output_mcp.list_pending_drafts", mock_list),
+            patch("pulseguard.publishers.x_publisher.post_reply", mock_publish),
+            patch("pulseguard.mcp_servers.output_mcp.update_draft_status", mock_update),
+        ):
+            with pytest.raises(HTTPException) as exc:
+                await approve_draft("sig-1", DraftReviewRequest(reviewed_by="vinoth"))
+
+        assert exc.value.status_code == 502
+        mock_update.assert_not_awaited()  # never marked approved if the publish itself failed

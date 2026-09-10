@@ -376,3 +376,38 @@ async def reject_draft(signal_id: str, req: DraftReviewRequest) -> dict[str, Any
     if result.get("code") == "NOT_FOUND":
         raise HTTPException(status_code=404, detail=result["error"])
     return result
+
+
+def _extract_x_tweet_id(source_url: str) -> str | None:
+    # https://x.com/i/web/status/<id> — the id is the last path segment.
+    if "/status/" not in source_url:
+        return None
+    return source_url.rstrip("/").rsplit("/", 1)[-1]
+
+
+@router.post("/drafts/{signal_id}/approve", dependencies=[Depends(require_api_key)])
+async def approve_draft(signal_id: str, req: DraftReviewRequest) -> dict[str, Any]:
+    from pulseguard.mcp_servers.output_mcp import list_pending_drafts, update_draft_status
+    from pulseguard.publishers.x_publisher import PublishError, post_reply
+
+    listing = await list_pending_drafts()
+    draft = next((d for d in listing["drafts"] if d["signal_id"] == signal_id), None)
+    if draft is None:
+        raise HTTPException(status_code=404, detail=f"Draft {signal_id} not found")
+
+    if draft["source_platform"] == "x":
+        tweet_id = _extract_x_tweet_id(draft["source_url"])
+        if not tweet_id:
+            raise HTTPException(status_code=422, detail="Could not determine tweet id to reply to")
+        try:
+            await post_reply(in_reply_to_tweet_id=tweet_id, text=draft["draft_text"])
+        except PublishError as exc:
+            logger.error("draft_publish_failed", signal_id=signal_id, error=str(exc))
+            raise HTTPException(status_code=502, detail=f"Publish failed: {exc}") from exc
+    else:
+        raise HTTPException(
+            status_code=422,
+            detail=f"No publisher available for source '{draft['source_platform']}'",
+        )
+
+    return await update_draft_status(signal_id, "approved", reviewed_by=req.reviewed_by)
