@@ -67,6 +67,19 @@ REDDIT_CLIENT_ID=            # Reddit read-only OAuth
 REDDIT_CLIENT_SECRET=
 SLACK_WEBHOOK_URL=           # For escalation alerts
 REDIS_URL=redis://localhost:6379
+
+# Spend guard — both default to 0 ("no cap") if unset, which is unsafe for
+# any real deployment; MODEL_PRICING_PER_MILLION_TOKENS must also be set or
+# the guard silently prices every call at $0 and the caps below never trip
+DAILY_BUDGET_USD_CAP=
+MONTHLY_BUDGET_USD_CAP=
+MODEL_PRICING_PER_MILLION_TOKENS=   # "model:input,output" pairs, e.g. claude-haiku-4-5:1.00,5.00
+
+# OAuth 1.0a user-context credentials, required for the Approve & Send publish path
+X_API_KEY=
+X_API_SECRET=
+X_ACCESS_TOKEN=
+X_ACCESS_TOKEN_SECRET=
 ```
 
 ### Run locally
@@ -234,7 +247,7 @@ redis-cli GET pulseguard:x:monthly_reads
 - API key auth required on all gateway endpoints
 - Rate limited: 60 requests/minute per API key
 - Append-only audit log at `logs/audit.jsonl`
-- RESOLVER produces draft responses only — never posts automatically
+- RESOLVER itself never posts — it produces draft responses only. Publishing happens exclusively through the human-approved `/api/v1/drafts/{id}/approve` endpoint, never automatically and never without that explicit approval action
 
 ---
 

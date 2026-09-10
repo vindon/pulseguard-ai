@@ -27,6 +27,22 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("pulseguard_gateway_starting")
+
+    spend_guard_believed_active = (
+        settings.daily_budget_usd_cap > 0 or settings.monthly_budget_usd_cap > 0
+    )
+    if spend_guard_believed_active and not settings.model_pricing_map:
+        logger.warning(
+            "pulseguard_spend_guard_non_functional",
+            reason=(
+                "DAILY_BUDGET_USD_CAP/MONTHLY_BUDGET_USD_CAP is set, but "
+                "MODEL_PRICING_PER_MILLION_TOKENS is empty -- every LLM call "
+                "will be priced at $0 and the spend cap can NEVER trip. Set "
+                "MODEL_PRICING_PER_MILLION_TOKENS to make the spend guard "
+                "actually functional."
+            ),
+        )
+
     from pulseguard.orchestrator.graph import orchestrator
 
     await orchestrator.start()
