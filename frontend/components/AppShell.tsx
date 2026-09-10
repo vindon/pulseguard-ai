@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import type { EscalationsResponse } from '@/lib/types';
 import { usePolling } from '@/lib/usePolling';
 import { relativeTime } from '@/lib/format';
-import { LayoutGrid, List, TriangleAlert, Activity, Send, Search, Bell, ShieldCheck, ChevronDown } from 'lucide-react';
+import { LayoutGrid, List, TriangleAlert, Activity, Send, Search, Bell, ShieldCheck, ChevronDown, FileCheck } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -28,6 +28,7 @@ const NAV_ITEMS = [
   { href: '/', label: 'Overview', icon: LayoutGrid },
   { href: '/queue', label: 'Signal queue', icon: List },
   { href: '/escalations', label: 'Escalations', icon: TriangleAlert, badgeKey: 'escalations' as const },
+  { href: '/drafts', label: 'Drafts', icon: FileCheck },
   { href: '/status', label: 'Adapter status', icon: Activity },
   { href: '/ingest', label: 'Send test signal', icon: Send },
 ];

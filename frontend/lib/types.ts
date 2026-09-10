@@ -118,6 +118,27 @@ export interface OrchestratorStatus {
   x_monthly_cap: number;
 }
 
+export interface PendingDraft {
+  signal_id: string;
+  carrier: string;
+  category: string;
+  severity: string | null;
+  source_platform: SignalSource;
+  source_url: string;
+  draft_text: string;
+  confidence_score: number;
+  status: 'pending' | 'approved' | 'rejected';
+  screen_flag: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+}
+
+export interface DraftsResponse {
+  drafts: PendingDraft[];
+  count: number;
+}
+
 export interface IngestRequest {
   source: SignalSource;
   source_id: string;

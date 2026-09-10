@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Thin authenticated proxy: client components call /api/proxy/<path>, this
 // handler attaches X-API-Key server-side and forwards to the real gateway.
-// The API key never reaches the browser. Only GET and the two specific POST
+// The API key never reaches the browser. Only GET and the specific POST
 // actions the UI actually performs are allowed through — this is not a
 // general-purpose passthrough.
 
 const API_URL = process.env.PULSEGUARD_API_URL || 'http://localhost:8000';
 const API_KEY = process.env.PULSEGUARD_API_KEY || '';
 
-const ALLOWED_POST_SUFFIXES = [/\/ack$/, /^signals\/ingest$/];
+const ALLOWED_POST_SUFFIXES = [/\/ack$/, /^signals\/ingest$/, /\/(approve|reject)$/];
 
 function resolveTarget(pathSegments: string[]): string | null {
   if (pathSegments.some((seg) => seg === '..' || seg === '.' || seg === '')) {

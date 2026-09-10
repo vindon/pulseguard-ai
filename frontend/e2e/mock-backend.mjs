@@ -100,6 +100,24 @@ const escalationBrief = {
   acknowledged_at: null,
 };
 
+const pendingDrafts = [
+  {
+    signal_id: 'e2e-draft-0001',
+    carrier: 'verizon',
+    category: 'eSIM activation',
+    severity: '2',
+    source_platform: 'x',
+    source_url: 'https://example.com/x/e2e-draft-0001',
+    draft_text: 'To activate your eSIM: Settings > Cellular > Add eSIM, then rescan the QR code.',
+    confidence_score: 0.91,
+    status: 'pending',
+    screen_flag: null,
+    created_at: minutesAgo(3),
+    reviewed_at: null,
+    reviewed_by: null,
+  },
+];
+
 const ADAPTER_NAMES = ['x', 'reddit'];
 
 const adapterStatus = {
@@ -154,6 +172,11 @@ const server = createServer(async (req, res) => {
   // call this first so run order/parallelism can't make another test flaky.
   if (pathname === '/e2e/reset' && req.method === 'POST') {
     escalationAcknowledged = false;
+    pendingDrafts.forEach((d) => {
+      d.status = 'pending';
+      d.reviewed_at = null;
+      d.reviewed_by = null;
+    });
     return send(res, 200, { reset: true });
   }
 
@@ -195,6 +218,28 @@ const server = createServer(async (req, res) => {
       signal_id: escalationBrief.signal_id,
       acknowledged_by: 'e2e-test',
     });
+  }
+
+  if (pathname === '/api/v1/drafts' && req.method === 'GET') {
+    const status = searchParams.get('status');
+    const filtered = status ? pendingDrafts.filter((d) => d.status === status) : pendingDrafts;
+    return send(res, 200, { drafts: filtered, count: filtered.length });
+  }
+
+  const approveMatch = pathname.match(/^\/api\/v1\/drafts\/([^/]+)\/approve$/);
+  if (approveMatch && req.method === 'POST') {
+    const draft = pendingDrafts.find((d) => d.signal_id === approveMatch[1]);
+    if (!draft) return send(res, 404, { detail: 'not found' });
+    draft.status = 'approved';
+    return send(res, 200, draft);
+  }
+
+  const rejectMatch = pathname.match(/^\/api\/v1\/drafts\/([^/]+)\/reject$/);
+  if (rejectMatch && req.method === 'POST') {
+    const draft = pendingDrafts.find((d) => d.signal_id === rejectMatch[1]);
+    if (!draft) return send(res, 404, { detail: 'not found' });
+    draft.status = 'rejected';
+    return send(res, 200, draft);
   }
 
   if (pathname === '/api/v1/adapters/status') return send(res, 200, adapterStatus);
