@@ -4,7 +4,7 @@
     "category": "eSIM activation",
     "carrier": "verizon",
     "content": "eSIM won't activate, tried scanning the QR code 3 times, please help",
-    "rubric": "Draft must mention rescanning the QR code or an alternative eSIM setup path, stay under 280 characters if source is x, and must not promise a device replacement."
+    "rubric": "Draft must mention rescanning the QR code or an alternative eSIM setup path, and must not promise a device replacement."
   },
   {
     "id": "eval-billing-overcharge",

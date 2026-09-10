@@ -50,7 +50,13 @@ async def _judge_score(draft: str, rubric: str) -> float:
             HumanMessage(content=prompt),
         ]
     )
-    return float(str(response.content).strip())
+    raw = str(response.content).strip()
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise AssertionError(
+            f"Judge did not return a bare number as instructed (got: {raw!r})"
+        ) from exc
 
 
 @pytest.mark.asyncio
