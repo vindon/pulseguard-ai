@@ -70,9 +70,7 @@ class TestCheckBudget:
     @pytest.mark.asyncio
     async def test_passes_when_under_cap(self, monkeypatch):
         monkeypatch.setattr("pulseguard.security.budget_guard.settings.daily_budget_usd_cap", 10.0)
-        monkeypatch.setattr(
-            "pulseguard.security.budget_guard.settings.monthly_budget_usd_cap", 100.0
-        )
+        monkeypatch.setattr("pulseguard.security.budget_guard.settings.monthly_budget_usd_cap", 100.0)
         with patch(
             "pulseguard.security.budget_guard.get_async_redis",
             return_value=_mock_redis(daily="5.00", monthly="50.00"),
@@ -82,9 +80,7 @@ class TestCheckBudget:
     @pytest.mark.asyncio
     async def test_raises_when_daily_cap_exceeded(self, monkeypatch):
         monkeypatch.setattr("pulseguard.security.budget_guard.settings.daily_budget_usd_cap", 10.0)
-        monkeypatch.setattr(
-            "pulseguard.security.budget_guard.settings.monthly_budget_usd_cap", 1000.0
-        )
+        monkeypatch.setattr("pulseguard.security.budget_guard.settings.monthly_budget_usd_cap", 1000.0)
         with patch(
             "pulseguard.security.budget_guard.get_async_redis",
             return_value=_mock_redis(daily="10.01", monthly="50.00"),
@@ -94,12 +90,8 @@ class TestCheckBudget:
 
     @pytest.mark.asyncio
     async def test_raises_when_monthly_cap_exceeded(self, monkeypatch):
-        monkeypatch.setattr(
-            "pulseguard.security.budget_guard.settings.daily_budget_usd_cap", 1000.0
-        )
-        monkeypatch.setattr(
-            "pulseguard.security.budget_guard.settings.monthly_budget_usd_cap", 100.0
-        )
+        monkeypatch.setattr("pulseguard.security.budget_guard.settings.daily_budget_usd_cap", 1000.0)
+        monkeypatch.setattr("pulseguard.security.budget_guard.settings.monthly_budget_usd_cap", 100.0)
         with patch(
             "pulseguard.security.budget_guard.get_async_redis",
             return_value=_mock_redis(daily="5.00", monthly="100.01"),
@@ -117,9 +109,7 @@ class TestRecordSpend:
         )
         mock_redis = _mock_redis()
         with patch("pulseguard.security.budget_guard.get_async_redis", return_value=mock_redis):
-            cost = await record_spend(
-                "claude-haiku-4-5", input_tokens=1_000_000, output_tokens=200_000
-            )
+            cost = await record_spend("claude-haiku-4-5", input_tokens=1_000_000, output_tokens=200_000)
         # 1M input tokens @ $1.00/M + 200K output tokens @ $5.00/M = $1.00 + $1.00 = $2.00
         assert cost == pytest.approx(2.00)
         assert mock_redis.incrbyfloat.await_count == 2  # daily + monthly counters
@@ -180,11 +170,15 @@ class TestCalendarPartitionedKeys:
         monkeypatch.setattr(budget_guard_module, "datetime", _FixedClock)
 
         fake_redis = _StatefulFakeRedis()
-        with patch("pulseguard.security.budget_guard.get_async_redis", return_value=fake_redis):
+        with patch(
+            "pulseguard.security.budget_guard.get_async_redis", return_value=fake_redis
+        ):
             # "Yesterday": record $2.00 of spend, which already exceeds
             # today's $1.00 daily cap if the two days shared one counter.
             _FixedClock._now = datetime(2026, 9, 6, 12, 0, 0, tzinfo=UTC)
-            cost = await record_spend("claude-haiku-4-5", input_tokens=2_000_000, output_tokens=0)
+            cost = await record_spend(
+                "claude-haiku-4-5", input_tokens=2_000_000, output_tokens=0
+            )
             assert cost == pytest.approx(2.00)
 
             # A pre-existing bug (fixed-window TTL refreshed on every write)
