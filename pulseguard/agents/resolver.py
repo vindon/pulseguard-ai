@@ -20,6 +20,7 @@ from pulseguard.logging_config import get_logger
 from pulseguard.models.resolution import ResolutionRecord
 from pulseguard.models.triage import TriageReport
 from pulseguard.security.audit import write_audit_entry
+from pulseguard.security.output_screen import screen_draft
 from pulseguard.tracing import node_trace
 
 logger = get_logger(__name__)
@@ -272,6 +273,8 @@ async def emit_resolved(state: ResolverState) -> dict[str, Any]:
     from pulseguard.mcp_servers.output_mcp import write_pending_draft
     from pulseguard.models.drafts import PendingDraft
 
+    screen_result = await screen_draft(record.draft_response, category)
+
     pending_draft = PendingDraft(
         signal_id=signal_id,
         carrier=carrier,
@@ -282,6 +285,7 @@ async def emit_resolved(state: ResolverState) -> dict[str, Any]:
         source_url=state["validated_signal"].get("raw", {}).get("url", ""),
         draft_text=record.draft_response,
         confidence_score=record.confidence_score,
+        screen_flag="; ".join(screen_result.reasons) if not screen_result.passed else None,
         created_at=datetime.now(UTC),
     )
     await write_pending_draft(pending_draft.model_dump(mode="json"))

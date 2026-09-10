@@ -12,6 +12,7 @@ import pytest
 
 from pulseguard.models.signals import RawSignal, ValidatedSignal
 from pulseguard.models.triage import TriageReport
+from pulseguard.security.output_screen import ScreenResult
 
 _FIXTURES = Path(__file__).parent.parent / "fixtures"
 
@@ -567,6 +568,10 @@ class TestResolverAgent:
         with (
             patch("pulseguard.mcp_servers.output_mcp.write_resolution", mock_write_res),
             patch("pulseguard.mcp_servers.output_mcp.write_pending_draft", mock_write_draft),
+            patch(
+                "pulseguard.agents.resolver.screen_draft",
+                AsyncMock(return_value=ScreenResult(passed=True, reasons=[])),
+            ),
         ):
             await emit_resolved(state)
 
@@ -610,6 +615,10 @@ class TestResolverAgent:
             ),
             patch("pulseguard.mcp_servers.output_mcp.write_pending_draft", mock_write_draft),
             patch("pulseguard.orchestrator.event_bus.publish_escalation_needed", AsyncMock()),
+            patch(
+                "pulseguard.agents.resolver.screen_draft",
+                AsyncMock(return_value=ScreenResult(passed=True, reasons=[])),
+            ),
         ):
             await emit_resolved(state)
 
