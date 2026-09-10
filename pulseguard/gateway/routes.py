@@ -157,6 +157,10 @@ class AckRequest(BaseModel):
     ack_by: str
 
 
+class DraftReviewRequest(BaseModel):
+    reviewed_by: str
+
+
 # ── Signal endpoints ────────────────────────────────────────────────────────
 
 
@@ -352,3 +356,23 @@ async def clear_halt_endpoint() -> dict[str, Any]:
     await clear_halt()
     logger.warning("orchestrator_halt_cleared_by_human")
     return {"halted": False}
+
+
+# ── Draft review queue endpoints ────────────────────────────────────────────
+
+
+@router.get("/drafts", dependencies=[Depends(require_api_key)])
+async def list_drafts(status: str | None = Query(default=None)) -> dict[str, Any]:
+    from pulseguard.mcp_servers.output_mcp import list_pending_drafts
+
+    return await list_pending_drafts(status=status)
+
+
+@router.post("/drafts/{signal_id}/reject", dependencies=[Depends(require_api_key)])
+async def reject_draft(signal_id: str, req: DraftReviewRequest) -> dict[str, Any]:
+    from pulseguard.mcp_servers.output_mcp import update_draft_status
+
+    result = await update_draft_status(signal_id, "rejected", reviewed_by=req.reviewed_by)
+    if result.get("code") == "NOT_FOUND":
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result

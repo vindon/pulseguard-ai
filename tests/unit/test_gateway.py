@@ -161,3 +161,39 @@ class TestHaltEndpoints:
             result = await clear_halt_endpoint()
         mock_clear.assert_awaited_once()
         assert result == {"halted": False}
+
+
+class TestDraftEndpoints:
+    @pytest.mark.asyncio
+    async def test_list_drafts_delegates_to_mcp_tool(self):
+        from pulseguard.gateway.routes import list_drafts
+
+        mock_list = AsyncMock(return_value={"drafts": [], "count": 0})
+        with patch("pulseguard.mcp_servers.output_mcp.list_pending_drafts", mock_list):
+            result = await list_drafts(status="pending")
+
+        mock_list.assert_awaited_once_with(status="pending")
+        assert result == {"drafts": [], "count": 0}
+
+    @pytest.mark.asyncio
+    async def test_reject_draft_marks_status(self):
+        from pulseguard.gateway.routes import DraftReviewRequest, reject_draft
+
+        mock_update = AsyncMock(return_value={"signal_id": "sig-1", "status": "rejected"})
+        with patch("pulseguard.mcp_servers.output_mcp.update_draft_status", mock_update):
+            result = await reject_draft("sig-1", DraftReviewRequest(reviewed_by="vinoth"))
+
+        mock_update.assert_awaited_once_with("sig-1", "rejected", reviewed_by="vinoth")
+        assert result["status"] == "rejected"
+
+    @pytest.mark.asyncio
+    async def test_reject_draft_not_found_raises_404(self):
+        from pulseguard.gateway.routes import DraftReviewRequest, reject_draft
+
+        mock_update = AsyncMock(
+            return_value={"error": "Draft sig-missing not found", "code": "NOT_FOUND"}
+        )
+        with patch("pulseguard.mcp_servers.output_mcp.update_draft_status", mock_update):
+            with pytest.raises(HTTPException) as exc:
+                await reject_draft("sig-missing", DraftReviewRequest(reviewed_by="vinoth"))
+        assert exc.value.status_code == 404
