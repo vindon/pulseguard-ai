@@ -48,37 +48,6 @@ jobs:
       - name: Unit + integration tests
         run: uv run pytest tests/ -v --ignore=tests/evals
 
-  evals:
-    runs-on: ubuntu-latest
-    needs: verify
-    # Real, paid Anthropic API calls — scoped to master pushes and PRs only,
-    # not every branch push, so routine feature-branch commits during
-    # development never trigger real spend without a deliberate merge/PR.
-    if: github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
-      - name: Resolver draft-quality regression gate
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: uv run pytest tests/evals/ -v
-
   secrets-scan:
     runs-on: ubuntu-latest
     steps:

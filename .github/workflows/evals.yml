@@ -1,0 +1,61 @@
+name: Resolver quality evals
+
+# Real, paid Anthropic API calls (draft + LLM-judge scoring) — scoped
+# deliberately narrow so this never fires as a side effect of unrelated
+# work:
+#   - push/pull_request only trigger when a file that could actually
+#     change Resolver's draft quality changes, not on every master push
+#   - workflow_dispatch adds a manual "Run workflow" button (and
+#     `gh workflow run evals.yml`) for an on-demand check anytime,
+#     independent of what changed
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'pulseguard/agents/resolver.py'
+      - 'pulseguard/agents/llm_guard.py'
+      - 'pulseguard/security/budget_guard.py'
+      - 'pulseguard/mcp_servers/kb_mcp.py'
+      - 'tests/evals/**'
+      - 'tests/fixtures/evals/**'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'pulseguard/agents/resolver.py'
+      - 'pulseguard/agents/llm_guard.py'
+      - 'pulseguard/security/budget_guard.py'
+      - 'pulseguard/mcp_servers/kb_mcp.py'
+      - 'tests/evals/**'
+      - 'tests/fixtures/evals/**'
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Resolver draft-quality regression gate
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: uv run pytest tests/evals/ -v
