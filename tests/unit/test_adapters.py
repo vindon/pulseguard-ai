@@ -275,5 +275,3 @@ class TestFeedAdapterBase:
 
     def test_content_hash_unique(self):
         assert FeedAdapter.content_hash("content A") != FeedAdapter.content_hash("content B")
-
-
