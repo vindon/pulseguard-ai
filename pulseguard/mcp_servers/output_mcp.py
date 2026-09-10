@@ -135,10 +135,18 @@ async def list_pending_drafts(status: str | None = None) -> dict[str, Any]:
 @mcp.tool()
 @tool_trace("output", "update_draft_status")
 async def update_draft_status(
-    signal_id: str, status: str, reviewed_by: str | None = None
+    signal_id: str,
+    status: str,
+    reviewed_by: str | None = None,
+    published_result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Mark a PendingDraft approved or rejected. Does not publish anything —
-    Task 10 wires the actual publish call separately, after this write."""
+    Task 10 wires the actual publish call separately, after this write.
+
+    published_result: the real return value of the publish call (e.g.
+    post_reply's {"posted": True, "tweet_id": ...}), passed in by the caller
+    once publishing has already succeeded. None for a rejected draft, or any
+    approval that didn't go through a publisher."""
     try:
         redis = get_async_redis()
         raw = await redis.hget(_PENDING_DRAFTS_KEY, signal_id)
@@ -150,6 +158,8 @@ async def update_draft_status(
         pd.status = status  # type: ignore[assignment]
         pd.reviewed_at = datetime.now(UTC)
         pd.reviewed_by = reviewed_by
+        if published_result is not None:
+            pd.published_result = published_result
         await redis.hset(_PENDING_DRAFTS_KEY, signal_id, pd.model_dump_json())
         return pd.model_dump(mode="json")
     except Exception as exc:

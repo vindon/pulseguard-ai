@@ -614,6 +614,27 @@ class TestDraftQueue:
         assert result["code"] == "NOT_FOUND"
 
     @pytest.mark.asyncio
+    async def test_update_draft_status_persists_published_result(self):
+        """approve_draft's real post_reply() return value must survive onto
+        the PendingDraft, so what actually got posted is queryable from the
+        product itself (not only a structlog line)."""
+        from pulseguard.mcp_servers.output_mcp import update_draft_status
+
+        mock_redis = AsyncMock()
+        mock_redis.hget = AsyncMock(return_value=json.dumps(_sample_pending_draft()))
+        with patch("pulseguard.mcp_servers.output_mcp.get_async_redis", return_value=mock_redis):
+            result = await update_draft_status(
+                "sig-draft-001",
+                "approved",
+                reviewed_by="reviewer1",
+                published_result={"posted": True, "tweet_id": "999"},
+            )
+
+        assert result["published_result"] == {"posted": True, "tweet_id": "999"}
+        written = json.loads(mock_redis.hset.call_args.args[2])
+        assert written["published_result"] == {"posted": True, "tweet_id": "999"}
+
+    @pytest.mark.asyncio
     async def test_list_pending_drafts_skips_malformed_json(self):
         """One malformed (non-JSON) record should not blank out the entire queue."""
         from pulseguard.mcp_servers.output_mcp import list_pending_drafts

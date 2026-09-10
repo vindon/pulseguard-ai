@@ -420,7 +420,9 @@ async def approve_draft(signal_id: str, req: DraftReviewRequest) -> dict[str, An
         if not tweet_id:
             raise HTTPException(status_code=422, detail="Could not determine tweet id to reply to")
         try:
-            await post_reply(in_reply_to_tweet_id=tweet_id, text=draft["draft_text"])
+            publish_result = await post_reply(
+                in_reply_to_tweet_id=tweet_id, text=draft["draft_text"]
+            )
         except PublishError as exc:
             logger.error("draft_publish_failed", signal_id=signal_id, error=str(exc))
             raise HTTPException(status_code=502, detail=f"Publish failed: {exc}") from exc
@@ -430,4 +432,6 @@ async def approve_draft(signal_id: str, req: DraftReviewRequest) -> dict[str, An
             detail=f"No publisher available for source '{draft['source_platform']}'",
         )
 
-    return await update_draft_status(signal_id, "approved", reviewed_by=req.reviewed_by)
+    return await update_draft_status(
+        signal_id, "approved", reviewed_by=req.reviewed_by, published_result=publish_result
+    )

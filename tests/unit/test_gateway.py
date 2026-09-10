@@ -228,6 +228,15 @@ class TestDraftEndpoints:
             in_reply_to_tweet_id="999", text="Try Settings > Cellular > Add eSIM."
         )
         assert result["status"] == "approved"
+        # The real post_reply() return value must be captured and handed to
+        # update_draft_status, so what actually got posted is queryable from
+        # the product itself, not only from a log line.
+        mock_update.assert_awaited_once_with(
+            "sig-1",
+            "approved",
+            reviewed_by="vinoth",
+            published_result={"posted": True, "tweet_id": "999"},
+        )
 
     @pytest.mark.asyncio
     async def test_approve_draft_not_found_raises_404(self):
