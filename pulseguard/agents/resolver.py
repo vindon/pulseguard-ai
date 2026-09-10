@@ -269,6 +269,23 @@ async def emit_resolved(state: ResolverState) -> dict[str, Any]:
 
     await write_resolution(signal_id, record.model_dump())
 
+    from pulseguard.mcp_servers.output_mcp import write_pending_draft
+    from pulseguard.models.drafts import PendingDraft
+
+    pending_draft = PendingDraft(
+        signal_id=signal_id,
+        carrier=carrier,
+        category=category,
+        severity=state["triage_report"].get("severity_score")
+        and str(state["triage_report"]["severity_score"]),
+        source_platform=source,
+        source_url=state["validated_signal"].get("raw", {}).get("url", ""),
+        draft_text=record.draft_response,
+        confidence_score=record.confidence_score,
+        created_at=datetime.now(UTC),
+    )
+    await write_pending_draft(pending_draft.model_dump(mode="json"))
+
     if not state.get("resolved"):
         from pulseguard.orchestrator.event_bus import publish_escalation_needed
 

@@ -541,6 +541,81 @@ class TestResolverAgent:
         assert state["confidence_score"] < 0.85
         mock_escalate.assert_awaited_once()
 
+    @pytest.mark.asyncio
+    async def test_emit_resolved_writes_pending_draft_when_resolved(self):
+        from pulseguard.agents.resolver import emit_resolved
+
+        state = {
+            "triage_report": {
+                "signal_id": "sig-001",
+                "category": "eSIM activation",
+                "severity_score": 2,
+            },
+            "validated_signal": {
+                "detected_carrier": "verizon",
+                "raw": {"source": "x", "url": "https://x.com/i/web/status/sig-001"},
+            },
+            "formatted_response": "Try Settings > Cellular > Add eSIM and rescan the QR code.",
+            "draft_response": "",
+            "confidence_score": 0.91,
+            "resolved": True,
+            "escalation_reason": None,
+            "trace_id": "trace-001",
+        }
+        mock_write_res = AsyncMock(return_value={"written": True})
+        mock_write_draft = AsyncMock(return_value={"written": True})
+        with (
+            patch("pulseguard.mcp_servers.output_mcp.write_resolution", mock_write_res),
+            patch("pulseguard.mcp_servers.output_mcp.write_pending_draft", mock_write_draft),
+        ):
+            await emit_resolved(state)
+
+        mock_write_draft.assert_awaited_once()
+        written = mock_write_draft.call_args.args[0]
+        assert written["signal_id"] == "sig-001"
+        assert written["draft_text"] == "Try Settings > Cellular > Add eSIM and rescan the QR code."
+        assert written["confidence_score"] == 0.91
+        assert written["status"] == "pending"
+
+    @pytest.mark.asyncio
+    async def test_emit_resolved_writes_pending_draft_when_not_resolved(self):
+        """Even a low-confidence signal that also triggers Escalation gets a
+        PendingDraft — the simple review-and-send queue and the full
+        Escalation brief are two independent surfaces, not exclusive."""
+        from pulseguard.agents.resolver import emit_resolved
+
+        state = {
+            "triage_report": {
+                "signal_id": "sig-002",
+                "category": "Device troubleshooting",
+                "severity_score": 3,
+            },
+            "validated_signal": {
+                "detected_carrier": "att",
+                "raw": {"source": "reddit", "url": "https://reddit.com/r/att/sig-002"},
+            },
+            "formatted_response": "",
+            "draft_response": "Best-effort draft: try a network reset in Settings.",
+            "confidence_score": 0.4,
+            "resolved": False,
+            "escalation_reason": "Confidence 0.40 below threshold 0.85",
+            "trace_id": "trace-002",
+        }
+        mock_write_draft = AsyncMock(return_value={"written": True})
+        with (
+            patch(
+                "pulseguard.mcp_servers.output_mcp.write_resolution",
+                AsyncMock(return_value={"written": True}),
+            ),
+            patch("pulseguard.mcp_servers.output_mcp.write_pending_draft", mock_write_draft),
+            patch("pulseguard.orchestrator.event_bus.publish_escalation_needed", AsyncMock()),
+        ):
+            await emit_resolved(state)
+
+        written = mock_write_draft.call_args.args[0]
+        assert written["draft_text"] == "Best-effort draft: try a network reset in Settings."
+        assert written["confidence_score"] == 0.4
+
 
 # ── ESCALATION ─────────────────────────────────────────────────────────────
 
