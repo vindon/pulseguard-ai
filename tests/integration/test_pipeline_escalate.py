@@ -93,9 +93,13 @@ class TestEscalationPath:
         mock_llm = AsyncMock()
         mock_llm.ainvoke = AsyncMock(
             side_effect=[
-                MagicMock(content=[{"type": "text", "text": "Try airplane mode..."}]),  # draft
                 MagicMock(
-                    content="0.55 | Incomplete — missing carrier settings step"
+                    usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                    content=[{"type": "text", "text": "Try airplane mode..."}],
+                ),  # draft
+                MagicMock(
+                    usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                    content="0.55 | Incomplete — missing carrier settings step",
                 ),  # confidence
             ]
         )
@@ -139,12 +143,13 @@ class TestEscalationPath:
         mock_llm = AsyncMock()
         mock_llm.ainvoke = AsyncMock(
             return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
                 content=json.dumps(
                     {
                         "summary": "Customer reports repeated billing overcharge and imminent churn.",
                         "recommended_action": "Review billing history and issue credit.",
                     }
-                )
+                ),
             )
         )
         mock_slack = AsyncMock(return_value={"sent": True})
@@ -218,20 +223,27 @@ class TestEscalationPath:
         mock_llm = AsyncMock()
         mock_llm.ainvoke = AsyncMock(
             return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
                 content=json.dumps(
                     {
                         "summary": "Customer reports repeated billing overcharge.",
                         "recommended_action": "Review billing history and issue credit.",
                     }
-                )
+                ),
             )
         )
         fake_redis = _FakeAsyncRedis()
 
         with (
             patch("pulseguard.agents.escalation._MODEL", mock_llm),
-            patch("pulseguard.mcp_servers.notify_mcp.send_slack_alert", AsyncMock(return_value={"sent": True})),
-            patch("pulseguard.mcp_servers.notify_mcp.send_email_brief", AsyncMock(return_value={"sent": True})),
+            patch(
+                "pulseguard.mcp_servers.notify_mcp.send_slack_alert",
+                AsyncMock(return_value={"sent": True}),
+            ),
+            patch(
+                "pulseguard.mcp_servers.notify_mcp.send_email_brief",
+                AsyncMock(return_value={"sent": True}),
+            ),
             patch("pulseguard.mcp_servers.output_mcp.get_async_redis", return_value=fake_redis),
             patch("pulseguard.mcp_servers.notify_mcp.get_async_redis", return_value=fake_redis),
             patch("pulseguard.redis_client.get_async_redis", return_value=fake_redis),

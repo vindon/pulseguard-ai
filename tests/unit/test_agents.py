@@ -138,7 +138,10 @@ class TestSentinelAgent:
 
         mock_llm = AsyncMock()
         mock_llm.ainvoke = AsyncMock(
-            return_value=MagicMock(content="VALID: Genuine eSIM activation issue with Verizon")
+            return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                content="VALID: Genuine eSIM activation issue with Verizon",
+            )
         )
 
         mock_dedup = AsyncMock(return_value={"is_duplicate": False})
@@ -219,7 +222,8 @@ class TestSentinelAgent:
         mock_llm = AsyncMock()
         mock_llm.ainvoke = AsyncMock(
             return_value=MagicMock(
-                content="INVALID: Spam giveaway post, not a genuine support issue"
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                content="INVALID: Spam giveaway post, not a genuine support issue",
             )
         )
         mock_dedup = AsyncMock(return_value={"is_duplicate": False})
@@ -262,6 +266,7 @@ class TestTriageAgent:
         mock_llm = AsyncMock()
         mock_llm.ainvoke = AsyncMock(
             return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
                 content=json.dumps(
                     {
                         "category": "eSIM activation",
@@ -270,7 +275,7 @@ class TestTriageAgent:
                         "churn_risk": False,
                         "routing_rationale": "Tier 0 deterministic eSIM issue",
                     }
-                )
+                ),
             )
         )
         mock_publish = AsyncMock()
@@ -321,6 +326,7 @@ class TestTriageAgent:
         mock_llm = AsyncMock()
         mock_llm.ainvoke = AsyncMock(
             return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
                 content=json.dumps(
                     {
                         "category": "Billing dispute",
@@ -329,7 +335,7 @@ class TestTriageAgent:
                         "churn_risk": True,
                         "routing_rationale": "Billing dispute requires account access — Tier 2",
                     }
-                )
+                ),
             )
         )
         mock_publish = AsyncMock()
@@ -417,16 +423,21 @@ class TestResolverAgent:
         mock_llm.ainvoke = AsyncMock(
             side_effect=[
                 MagicMock(
+                    usage_metadata={"input_tokens": 0, "output_tokens": 0},
                     content=[
                         {
                             "type": "text",
                             "text": "To activate your Verizon eSIM: go to Settings > Cellular > Add eSIM...",
                         }
-                    ]
+                    ],
                 ),
-                MagicMock(content="0.92 | Response accurately covers all eSIM activation steps"),
                 MagicMock(
-                    content="To activate your Verizon eSIM: Settings > Cellular > Add eSIM > scan QR code > restart. ^PG"
+                    usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                    content="0.92 | Response accurately covers all eSIM activation steps",
+                ),
+                MagicMock(
+                    usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                    content="To activate your Verizon eSIM: Settings > Cellular > Add eSIM > scan QR code > restart. ^PG",
                 ),
             ]
         )
@@ -494,9 +505,13 @@ class TestResolverAgent:
         mock_llm = AsyncMock()
         mock_llm.ainvoke = AsyncMock(
             side_effect=[
-                MagicMock(content=[{"type": "text", "text": "Try toggling airplane mode..."}]),
                 MagicMock(
-                    content="0.60 | Response incomplete, missing carrier settings update step"
+                    usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                    content=[{"type": "text", "text": "Try toggling airplane mode..."}],
+                ),
+                MagicMock(
+                    usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                    content="0.60 | Response incomplete, missing carrier settings update step",
                 ),
             ]
         )
@@ -736,12 +751,13 @@ class TestEscalationAgent:
         mock_llm = AsyncMock()
         mock_llm.ainvoke = AsyncMock(
             return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
                 content=json.dumps(
                     {
                         "summary": "Customer reports billing overcharge for 3 consecutive months with unresolved promo discount.",
                         "recommended_action": "Review account billing history for last 3 months, identify discount application status, issue credit if overcharge confirmed.",
                     }
-                )
+                ),
             )
         )
         mock_slack = AsyncMock(return_value={"sent": True})

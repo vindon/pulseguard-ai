@@ -51,11 +51,15 @@ class TestTier0EsimPipeline:
 
         mock_llm_sentinel = AsyncMock()
         mock_llm_sentinel.ainvoke = AsyncMock(
-            return_value=MagicMock(content="VALID: Genuine eSIM activation failure")
+            return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                content="VALID: Genuine eSIM activation failure",
+            )
         )
         mock_llm_triage = AsyncMock()
         mock_llm_triage.ainvoke = AsyncMock(
             return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
                 content=json.dumps(
                     {
                         "category": "eSIM activation",
@@ -64,7 +68,7 @@ class TestTier0EsimPipeline:
                         "churn_risk": False,
                         "routing_rationale": "Tier 0 eSIM issue — RESOLVER",
                     }
-                )
+                ),
             )
         )
         mock_dedup_check = AsyncMock(return_value={"is_duplicate": False})
@@ -104,12 +108,14 @@ class TestTier0EsimPipeline:
         mock_llm_sentinel = AsyncMock()
         mock_llm_sentinel.ainvoke = AsyncMock(
             return_value=MagicMock(
-                content="VALID: Order status inquiry — genuine customer support issue"
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                content="VALID: Order status inquiry — genuine customer support issue",
             )
         )
         mock_llm_triage = AsyncMock()
         mock_llm_triage.ainvoke = AsyncMock(
             return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
                 content=json.dumps(
                     {
                         "category": "Order status",
@@ -118,7 +124,7 @@ class TestTier0EsimPipeline:
                         "churn_risk": False,
                         "routing_rationale": "Tier 0 order status — RESOLVER",
                     }
-                )
+                ),
             )
         )
         mock_dedup_check = AsyncMock(return_value={"is_duplicate": False})
@@ -168,11 +174,15 @@ class TestTier2BillingPipeline:
 
         mock_llm_sentinel = AsyncMock()
         mock_llm_sentinel.ainvoke = AsyncMock(
-            return_value=MagicMock(content="VALID: Billing dispute with churn risk")
+            return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                content="VALID: Billing dispute with churn risk",
+            )
         )
         mock_llm_triage = AsyncMock()
         mock_llm_triage.ainvoke = AsyncMock(
             return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
                 content=json.dumps(
                     {
                         "category": "Billing dispute",
@@ -181,7 +191,7 @@ class TestTier2BillingPipeline:
                         "churn_risk": True,
                         "routing_rationale": "Billing dispute requires human agent — Tier 2",
                     }
-                )
+                ),
             )
         )
         mock_dedup = AsyncMock(return_value={"is_duplicate": False})
