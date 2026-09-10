@@ -8,7 +8,12 @@ It is NOT a call transcript system. It is NOT related to call anatomy frameworks
 ## Non-negotiables
 - Author handles are ALWAYS hashed (SHA-256) before storage. No exceptions.
 - Content is ALWAYS PII-sanitised before storage. No exceptions.
-- RESOLVER never posts publicly. It produces drafts only.
+- RESOLVER never posts publicly. It produces drafts only. Publishing happens
+  ONLY via explicit human approval through the `/drafts/{id}/approve`
+  endpoint — never automatically, never by any agent acting on its own.
+  ("RESOLVER never posts" describes the agent, not the system: the system
+  does post, but only after that explicit human action. Treating the
+  Approve & Send feature as a violation of this rule is a misreading of it.)
 - All secrets via environment variables. Never hardcode credentials.
 - Never commit .env. Never log API keys.
 - Run tests before marking any task done.
