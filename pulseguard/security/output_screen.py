@@ -12,7 +12,9 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
 
+from pulseguard.agents.llm_guard import invoke_with_budget_guard
 from pulseguard.logging_config import get_logger
+from pulseguard.security.budget_guard import BudgetExceededError
 
 logger = get_logger(__name__)
 
@@ -40,9 +42,15 @@ async def screen_draft(draft_text: str, category: str) -> ScreenResult:
             SystemMessage(content=_SCREEN_SYSTEM),
             HumanMessage(content=f"Category: {category}\n\nDraft reply:\n{draft_text}"),
         ]
-        response = await _MODEL.ainvoke(messages)
+        response = await invoke_with_budget_guard(_MODEL, messages, model_name="claude-haiku-4-5")
         parsed = json.loads(str(response.content))
         return ScreenResult(**parsed)
+    except BudgetExceededError as exc:
+        # Unlike the production agents (sentinel/triage/escalation), screen_draft
+        # never halts the pipeline -- a tripped budget cap fails open here too,
+        # same as any other screening failure (see module docstring).
+        logger.error("output_screen_budget_exceeded", error=str(exc))
+        return ScreenResult(passed=False, reasons=[f"Screening skipped: spend cap reached ({exc})"])
     except Exception as exc:
         logger.error("output_screen_error", error=str(exc))
         return ScreenResult(passed=False, reasons=[f"Screening unavailable: {exc}"])
