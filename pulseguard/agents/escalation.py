@@ -147,14 +147,36 @@ async def assign_priority(state: EscalationState) -> dict[str, Any]:
 
     if category in _P1_CATEGORIES:
         priority = "P1"
+        reason = (
+            f"Category '{category}' is security-sensitive — forced to P1 regardless of severity"
+        )
     else:
         priority = _PRIORITY_MAP.get(severity_score, "P2")
+        reason = f"Severity score {severity_score} maps to {priority}"
 
     # Churn risk bumps P3 to P2
     if priority == "P3" and report.get("churn_risk"):
         priority = "P2"
+        reason = f"Severity score {severity_score} maps to P3, but churn risk bumps it to P2"
 
     logger.info("escalation_priority_assigned", priority=priority, category=category)
+
+    from pulseguard.security.decision_log import DecisionLogger
+
+    dl = DecisionLogger("escalation", state["signal_id"], state.get("trace_id", ""))
+    dl.log(
+        decision_type="priority_assignment",
+        decision=priority,
+        reason=reason,
+        evidence={
+            "category": category,
+            "severity_score": severity_score,
+            "churn_risk": report.get("churn_risk", False),
+        },
+        alternatives=[p for p in ("P1", "P2", "P3") if p != priority],
+    )
+    dl.finalize()
+
     return {"severity": priority}
 
 

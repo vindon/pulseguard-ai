@@ -217,6 +217,23 @@ async def emit_routed(state: TriageState) -> dict[str, Any]:
         triaged_at=datetime.now(UTC),
     )
 
+    from pulseguard.security.decision_log import DecisionLogger
+
+    dl = DecisionLogger("triage", signal_id, state.get("trace_id", ""))
+    dl.log(
+        decision_type="routing_decision",
+        decision=report.routing_decision,
+        reason=report.routing_rationale,
+        evidence={
+            "category": report.category,
+            "severity_score": report.severity_score,
+            "sentiment_score": report.sentiment_score,
+            "churn_risk": report.churn_risk,
+        },
+        alternatives=["RESOLVER", "ESCALATION"],
+    )
+    dl.finalize()
+
     from pulseguard.orchestrator.event_bus import publish_triage_report
 
     await publish_triage_report(report)

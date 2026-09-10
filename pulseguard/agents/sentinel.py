@@ -144,6 +144,21 @@ async def classify_validity(state: SentinelState) -> dict[str, Any]:
     reason = reply.split(":", 1)[1].strip() if ":" in reply else reply
 
     logger.info("sentinel_classify", is_valid=is_valid, reason=reason[:80])
+
+    from pulseguard.security.decision_log import DecisionLogger
+
+    dl = DecisionLogger(
+        "sentinel", state["raw_signal"].get("signal_id", "unknown"), state.get("trace_id", "")
+    )
+    dl.log(
+        decision_type="validity_classification",
+        decision="valid" if is_valid else "invalid",
+        reason=reason,
+        evidence={"content_hash": state.get("content_hash", "")},
+        alternatives=["valid", "invalid"],
+    )
+    dl.finalize()
+
     return {"is_valid": is_valid, "validity_reason": reason}
 
 

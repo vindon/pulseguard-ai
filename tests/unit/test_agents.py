@@ -316,6 +316,41 @@ class TestSentinelAgent:
         assert state["is_valid"] is False
         mock_publish.assert_not_awaited()
 
+    @pytest.mark.asyncio
+    async def test_classify_validity_logs_decision(self):
+        raw = _load_fixture("signal_tier0_esim.json")
+
+        mock_llm = AsyncMock()
+        mock_llm.ainvoke = AsyncMock(
+            return_value=MagicMock(
+                usage_metadata={"input_tokens": 0, "output_tokens": 0},
+                content="VALID: Genuine eSIM activation issue with Verizon",
+            )
+        )
+        mock_dl_class = MagicMock()
+
+        with (
+            patch("pulseguard.agents.sentinel._MODEL", mock_llm),
+            patch("pulseguard.security.decision_log.DecisionLogger", mock_dl_class),
+        ):
+            from pulseguard.agents.sentinel import SentinelState, classify_validity
+
+            state: SentinelState = {
+                "raw_signal": raw,
+                "is_valid": False,
+                "validity_reason": "",
+                "detected_carrier": "verizon",
+                "content_hash": "somehash",
+                "duplicate": False,
+                "trace_id": "trace-004",
+                "error": None,
+            }
+            await classify_validity(state)
+
+        mock_dl_class.assert_called_once()
+        mock_dl_class.return_value.log.assert_called_once()
+        mock_dl_class.return_value.finalize.assert_called_once()
+
 
 # ── TRIAGE ─────────────────────────────────────────────────────────────────
 
@@ -470,6 +505,40 @@ class TestTriageAgent:
             }
             with pytest.raises(BudgetExceededError):
                 await classify_issue_type(state)
+
+    @pytest.mark.asyncio
+    async def test_emit_routed_logs_decision(self):
+        vs = _make_validated(_load_fixture("signal_tier0_esim.json"), carrier="verizon")
+
+        mock_publish = AsyncMock()
+        mock_redis = _mock_redis_fresh()
+        mock_dl_class = MagicMock()
+
+        with (
+            patch("pulseguard.orchestrator.event_bus.publish_triage_report", mock_publish),
+            patch("pulseguard.redis_client.get_async_redis", return_value=mock_redis),
+            patch("pulseguard.security.decision_log.DecisionLogger", mock_dl_class),
+        ):
+            from pulseguard.agents.triage import TriageState, emit_routed
+
+            state: TriageState = {
+                "validated_signal": vs.model_dump(),
+                "category": "eSIM activation",
+                "resolution_tier": 0,
+                "severity_score": 2,
+                "sentiment_score": -0.4,
+                "churn_risk": False,
+                "routing_decision": "RESOLVER",
+                "routing_rationale": "Tier 0 deterministic eSIM issue",
+                "kb_context": None,
+                "trace_id": "trace-triage-004",
+                "error": None,
+            }
+            await emit_routed(state)
+
+        mock_dl_class.assert_called_once()
+        mock_dl_class.return_value.log.assert_called_once()
+        mock_dl_class.return_value.finalize.assert_called_once()
 
 
 # ── RESOLVER ───────────────────────────────────────────────────────────────
@@ -795,6 +864,30 @@ class TestResolverAgent:
         written = mock_write_draft.call_args.args[0]
         assert written["screen_flag"] == "Screening unavailable: model unavailable"
 
+    @pytest.mark.asyncio
+    async def test_decide_logs_decision(self):
+        from pulseguard.agents.resolver import ResolverState, decide
+
+        state: ResolverState = {
+            "triage_report": {"signal_id": "sig-005", "category": "eSIM activation"},
+            "validated_signal": {},
+            "kb_script": None,
+            "draft_response": "",
+            "confidence_score": 0.92,
+            "confidence_reason": "",
+            "formatted_response": "",
+            "resolved": False,
+            "escalation_reason": None,
+            "trace_id": "trace-resolver-003",
+        }
+        mock_dl_class = MagicMock()
+        with patch("pulseguard.security.decision_log.DecisionLogger", mock_dl_class):
+            await decide(state)
+
+        mock_dl_class.assert_called_once()
+        mock_dl_class.return_value.log.assert_called_once()
+        mock_dl_class.return_value.finalize.assert_called_once()
+
 
 # ── ESCALATION ─────────────────────────────────────────────────────────────
 
@@ -958,3 +1051,31 @@ class TestEscalationAgent:
 
         assert result == {"acknowledged": False}
         mock_redis.hget.assert_awaited_with("pulseguard:escalations", "sig-timeout-test")
+
+    @pytest.mark.asyncio
+    async def test_assign_priority_logs_decision(self):
+        from pulseguard.agents.escalation import assign_priority
+
+        state = {
+            "signal_id": "sig-006",
+            "triage_report": {
+                "category": "General complaint / NPS risk",
+                "severity_score": 3,
+                "churn_risk": False,
+            },
+            "validated_signal": {},
+            "attempted_resolution": None,
+            "brief_summary": "",
+            "recommended_action": "",
+            "severity": "P2",
+            "trace_id": "trace-esc-003",
+            "acknowledged": False,
+            "error": None,
+        }
+        mock_dl_class = MagicMock()
+        with patch("pulseguard.security.decision_log.DecisionLogger", mock_dl_class):
+            await assign_priority(state)
+
+        mock_dl_class.assert_called_once()
+        mock_dl_class.return_value.log.assert_called_once()
+        mock_dl_class.return_value.finalize.assert_called_once()

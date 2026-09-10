@@ -222,13 +222,38 @@ async def validate_confidence(state: ResolverState) -> dict[str, Any]:
 
 @node_trace("resolver", "decide")
 async def decide(state: ResolverState) -> dict[str, Any]:
+    from pulseguard.security.decision_log import DecisionLogger
+
     score = state.get("confidence_score", 0.0)
+    dl = DecisionLogger(
+        "resolver",
+        state["triage_report"].get("signal_id", "unknown"),
+        state.get("trace_id", ""),
+    )
     if score >= _CONFIDENCE_THRESHOLD:
         logger.info("resolver_decided_resolve", score=score)
+        dl.log(
+            decision_type="resolve_or_escalate",
+            decision="resolved",
+            reason=f"Confidence {score:.2f} meets threshold {_CONFIDENCE_THRESHOLD}",
+            evidence={"confidence_score": score, "threshold": _CONFIDENCE_THRESHOLD},
+            confidence=score,
+            alternatives=["escalate"],
+        )
+        dl.finalize()
         return {"resolved": True, "escalation_reason": None}
     else:
         reason = f"Confidence {score:.2f} below threshold {_CONFIDENCE_THRESHOLD}"
         logger.info("resolver_decided_escalate", score=score, reason=reason)
+        dl.log(
+            decision_type="resolve_or_escalate",
+            decision="escalate",
+            reason=reason,
+            evidence={"confidence_score": score, "threshold": _CONFIDENCE_THRESHOLD},
+            confidence=score,
+            alternatives=["resolved"],
+        )
+        dl.finalize()
         return {"resolved": False, "escalation_reason": reason}
 
 
