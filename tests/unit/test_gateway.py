@@ -265,3 +265,114 @@ class TestDraftEndpoints:
 
         assert exc.value.status_code == 502
         mock_update.assert_not_awaited()  # never marked approved if the publish itself failed
+
+    @pytest.mark.asyncio
+    async def test_approve_draft_already_approved_returns_409_without_publishing(self):
+        """Sequential double-approve (double-click, UI retry, back-button
+        resubmit) must not publish twice: a draft that's already been
+        actioned is rejected with 409 before any publish attempt."""
+        from pulseguard.gateway.routes import DraftReviewRequest, approve_draft
+
+        draft = {
+            "signal_id": "sig-1",
+            "source_platform": "x",
+            "source_url": "https://x.com/i/web/status/999",
+            "draft_text": "draft",
+            "status": "approved",
+        }
+        mock_list = AsyncMock(return_value={"drafts": [draft], "count": 1})
+        mock_publish = AsyncMock()
+        mock_update = AsyncMock()
+
+        with (
+            patch("pulseguard.mcp_servers.output_mcp.list_pending_drafts", mock_list),
+            patch("pulseguard.publishers.x_publisher.post_reply", mock_publish),
+            patch("pulseguard.mcp_servers.output_mcp.update_draft_status", mock_update),
+        ):
+            with pytest.raises(HTTPException) as exc:
+                await approve_draft("sig-1", DraftReviewRequest(reviewed_by="vinoth"))
+
+        assert exc.value.status_code == 409
+        mock_publish.assert_not_awaited()
+        mock_update.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_approve_draft_already_rejected_returns_409_without_publishing(self):
+        from pulseguard.gateway.routes import DraftReviewRequest, approve_draft
+
+        draft = {
+            "signal_id": "sig-1",
+            "source_platform": "x",
+            "source_url": "https://x.com/i/web/status/999",
+            "draft_text": "draft",
+            "status": "rejected",
+        }
+        mock_list = AsyncMock(return_value={"drafts": [draft], "count": 1})
+        mock_publish = AsyncMock()
+        mock_update = AsyncMock()
+
+        with (
+            patch("pulseguard.mcp_servers.output_mcp.list_pending_drafts", mock_list),
+            patch("pulseguard.publishers.x_publisher.post_reply", mock_publish),
+            patch("pulseguard.mcp_servers.output_mcp.update_draft_status", mock_update),
+        ):
+            with pytest.raises(HTTPException) as exc:
+                await approve_draft("sig-1", DraftReviewRequest(reviewed_by="vinoth"))
+
+        assert exc.value.status_code == 409
+        mock_publish.assert_not_awaited()
+        mock_update.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_approve_draft_unsupported_platform_returns_422_without_publishing(self):
+        from pulseguard.gateway.routes import DraftReviewRequest, approve_draft
+
+        draft = {
+            "signal_id": "sig-1",
+            "source_platform": "reddit",
+            "source_url": "https://reddit.com/r/verizon/comments/abc123/some_thread",
+            "draft_text": "draft",
+            "status": "pending",
+        }
+        mock_list = AsyncMock(return_value={"drafts": [draft], "count": 1})
+        mock_publish = AsyncMock()
+        mock_update = AsyncMock()
+
+        with (
+            patch("pulseguard.mcp_servers.output_mcp.list_pending_drafts", mock_list),
+            patch("pulseguard.publishers.x_publisher.post_reply", mock_publish),
+            patch("pulseguard.mcp_servers.output_mcp.update_draft_status", mock_update),
+        ):
+            with pytest.raises(HTTPException) as exc:
+                await approve_draft("sig-1", DraftReviewRequest(reviewed_by="vinoth"))
+
+        assert exc.value.status_code == 422
+        mock_publish.assert_not_awaited()
+        mock_update.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_approve_draft_unparseable_source_url_returns_422_without_publishing(self):
+        from pulseguard.gateway.routes import DraftReviewRequest, approve_draft
+
+        draft = {
+            "signal_id": "sig-1",
+            "source_platform": "x",
+            "source_url": "https://x.com/someuser",
+            "draft_text": "draft",
+            "status": "pending",
+        }
+        mock_list = AsyncMock(return_value={"drafts": [draft], "count": 1})
+        mock_publish = AsyncMock()
+        mock_update = AsyncMock()
+
+        with (
+            patch("pulseguard.mcp_servers.output_mcp.list_pending_drafts", mock_list),
+            patch("pulseguard.publishers.x_publisher.post_reply", mock_publish),
+            patch("pulseguard.mcp_servers.output_mcp.update_draft_status", mock_update),
+        ):
+            with pytest.raises(HTTPException) as exc:
+                await approve_draft("sig-1", DraftReviewRequest(reviewed_by="vinoth"))
+
+        assert exc.value.status_code == 422
+        mock_publish.assert_not_awaited()
+        mock_update.assert_not_awaited()

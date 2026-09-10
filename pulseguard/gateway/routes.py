@@ -395,6 +395,26 @@ async def approve_draft(signal_id: str, req: DraftReviewRequest) -> dict[str, An
     if draft is None:
         raise HTTPException(status_code=404, detail=f"Draft {signal_id} not found")
 
+    # Guard against re-publishing a draft that's already been actioned:
+    # without this, two ordinary sequential approve calls (a double-click,
+    # a UI retry after a slow response, a browser back-button resubmit)
+    # would both pass the found-draft check above and both call
+    # post_reply, posting the same reply twice. This closes the realistic,
+    # trivially-reproducible sequential case.
+    #
+    # Known Phase 0 limitation: the read here (list_pending_drafts) and the
+    # write below (update_draft_status) aren't atomic — no Redis
+    # WATCH/MULTI or Lua script guards this — so a genuinely simultaneous
+    # (millisecond-level) double-click could still race past this check.
+    # Accepted tradeoff for Phase 0's single-tenant, low-concurrency scope;
+    # revisit with a compare-and-set or distributed lock if concurrent
+    # human reviewers become a real scenario.
+    if draft["status"] != "pending":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Draft {signal_id} is already '{draft['status']}', not pending",
+        )
+
     if draft["source_platform"] == "x":
         tweet_id = _extract_x_tweet_id(draft["source_url"])
         if not tweet_id:
