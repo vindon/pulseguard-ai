@@ -576,6 +576,7 @@ class TestResolverAgent:
         assert written["draft_text"] == "Try Settings > Cellular > Add eSIM and rescan the QR code."
         assert written["confidence_score"] == 0.91
         assert written["status"] == "pending"
+        assert written["source_url"] == "https://x.com/i/web/status/sig-001"
 
     @pytest.mark.asyncio
     async def test_emit_resolved_writes_pending_draft_when_not_resolved(self):
@@ -615,6 +616,7 @@ class TestResolverAgent:
         written = mock_write_draft.call_args.args[0]
         assert written["draft_text"] == "Best-effort draft: try a network reset in Settings."
         assert written["confidence_score"] == 0.4
+        assert written["source_url"] == "https://reddit.com/r/att/sig-002"
 
 
 # ── ESCALATION ─────────────────────────────────────────────────────────────
