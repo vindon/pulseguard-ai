@@ -95,7 +95,14 @@ async def compose_brief(state: EscalationState) -> dict[str, Any]:
     if attempted:
         prompt += f"\nAttempted resolution (insufficient confidence):\n{attempted}"
 
-    messages = [SystemMessage(content=_BRIEF_SYSTEM), HumanMessage(content=prompt)]
+    messages = [
+        SystemMessage(
+            content=[
+                {"type": "text", "text": _BRIEF_SYSTEM, "cache_control": {"type": "ephemeral"}}
+            ]
+        ),
+        HumanMessage(content=prompt),
+    ]
 
     try:
         import json

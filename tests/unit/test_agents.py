@@ -107,7 +107,11 @@ class TestInvokeWithBudgetGuard:
 
         assert result is mock_response
         mock_record.assert_awaited_once_with(
-            "claude-haiku-4-5", input_tokens=500, output_tokens=100
+            "claude-haiku-4-5",
+            input_tokens=500,
+            output_tokens=100,
+            cache_creation_tokens=0,
+            cache_read_tokens=0,
         )
 
     @pytest.mark.asyncio
@@ -125,7 +129,65 @@ class TestInvokeWithBudgetGuard:
         ):
             await invoke_with_budget_guard(mock_model, [], model_name="claude-haiku-4-5")
 
-        mock_record.assert_awaited_once_with("claude-haiku-4-5", input_tokens=0, output_tokens=0)
+        mock_record.assert_awaited_once_with(
+            "claude-haiku-4-5",
+            input_tokens=0,
+            output_tokens=0,
+            cache_creation_tokens=0,
+            cache_read_tokens=0,
+        )
+
+    @pytest.mark.asyncio
+    async def test_extracts_cache_token_details_when_present(self):
+        from pulseguard.agents.llm_guard import invoke_with_budget_guard
+
+        mock_response = MagicMock()
+        mock_response.usage_metadata = {
+            "input_tokens": 50,
+            "output_tokens": 100,
+            "input_token_details": {"cache_creation": 2000, "cache_read": 0},
+        }
+        mock_model = AsyncMock()
+        mock_model.ainvoke = AsyncMock(return_value=mock_response)
+
+        with (
+            patch("pulseguard.agents.llm_guard.check_budget", AsyncMock()),
+            patch(
+                "pulseguard.agents.llm_guard.record_spend", AsyncMock(return_value=0.001)
+            ) as mock_record,
+        ):
+            await invoke_with_budget_guard(mock_model, [], model_name="claude-haiku-4-5")
+
+        mock_record.assert_awaited_once_with(
+            "claude-haiku-4-5",
+            input_tokens=50,
+            output_tokens=100,
+            cache_creation_tokens=2000,
+            cache_read_tokens=0,
+        )
+
+    @pytest.mark.asyncio
+    async def test_missing_input_token_details_defaults_cache_fields_to_zero(self):
+        from pulseguard.agents.llm_guard import invoke_with_budget_guard
+
+        mock_response = MagicMock()
+        mock_response.usage_metadata = {"input_tokens": 50, "output_tokens": 100}
+        mock_model = AsyncMock()
+        mock_model.ainvoke = AsyncMock(return_value=mock_response)
+
+        with (
+            patch("pulseguard.agents.llm_guard.check_budget", AsyncMock()),
+            patch("pulseguard.agents.llm_guard.record_spend", AsyncMock()) as mock_record,
+        ):
+            await invoke_with_budget_guard(mock_model, [], model_name="claude-haiku-4-5")
+
+        mock_record.assert_awaited_once_with(
+            "claude-haiku-4-5",
+            input_tokens=50,
+            output_tokens=100,
+            cache_creation_tokens=0,
+            cache_read_tokens=0,
+        )
 
 
 # ── SENTINEL ───────────────────────────────────────────────────────────────

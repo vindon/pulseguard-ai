@@ -16,6 +16,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pulseguard.config import settings
 from pulseguard.models.signals import RawSignal, ValidatedSignal
 from pulseguard.models.triage import TriageReport
+from pulseguard.security.budget_guard import check_budget, record_spend
 
 _FIXTURES = Path(__file__).parent.parent / "fixtures" / "evals" / "eval_cases.json"
 # api_key is passed explicitly (not left to ChatAnthropic's default env-var
@@ -44,11 +45,21 @@ async def _judge_score(draft: str, rubric: str) -> float:
         "Score this draft 1-5 against the rubric (5 = fully satisfies it, "
         "1 = violates it). Return ONLY the number."
     )
+    await check_budget()
     response = await _JUDGE.ainvoke(
         [
             SystemMessage(content="You score customer-support drafts against a rubric."),
             HumanMessage(content=prompt),
         ]
+    )
+    usage = getattr(response, "usage_metadata", None) or {}
+    details = usage.get("input_token_details", {}) or {}
+    await record_spend(
+        "claude-haiku-4-5",
+        input_tokens=usage.get("input_tokens", 0),
+        output_tokens=usage.get("output_tokens", 0),
+        cache_creation_tokens=details.get("cache_creation", 0),
+        cache_read_tokens=details.get("cache_read", 0),
     )
     raw = str(response.content).strip()
     try:

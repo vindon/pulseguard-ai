@@ -151,7 +151,14 @@ async def draft_response(state: ResolverState) -> dict[str, Any]:
         kb_context = f"Category: {category}\nCarrier: {carrier.upper()}\n\n[No specific KB script found — use general best practices]"
 
     prompt = f"<customer_post>\n{content}\n</customer_post>\n\nKnowledge Base:\n{kb_context}"
-    messages = [SystemMessage(content=_DRAFT_SYSTEM), HumanMessage(content=prompt)]
+    messages = [
+        SystemMessage(
+            content=[
+                {"type": "text", "text": _DRAFT_SYSTEM, "cache_control": {"type": "ephemeral"}}
+            ]
+        ),
+        HumanMessage(content=prompt),
+    ]
 
     response = await invoke_with_budget_guard(
         _MODEL_THINKING, messages, model_name="claude-sonnet-4-6"
@@ -189,7 +196,14 @@ async def validate_confidence(state: ResolverState) -> dict[str, Any]:
         f"KB Steps:\n{kb_steps}\n\n"
         f"Draft response:\n{draft}"
     )
-    messages = [SystemMessage(content=_CONFIDENCE_SYSTEM), HumanMessage(content=prompt)]
+    messages = [
+        SystemMessage(
+            content=[
+                {"type": "text", "text": _CONFIDENCE_SYSTEM, "cache_control": {"type": "ephemeral"}}
+            ]
+        ),
+        HumanMessage(content=prompt),
+    ]
     response = await invoke_with_budget_guard(_MODEL, messages, model_name="claude-sonnet-4-6")
     reply = _extract_text(response.content).strip()
 
@@ -238,7 +252,14 @@ async def format_for_channel(state: ResolverState) -> dict[str, Any]:
     prompt = (
         f"Platform: {source} (limit: {char_limit} chars)\n\n" f"Draft response to adapt:\n{draft}"
     )
-    messages = [SystemMessage(content=_FORMAT_SYSTEM), HumanMessage(content=prompt)]
+    messages = [
+        SystemMessage(
+            content=[
+                {"type": "text", "text": _FORMAT_SYSTEM, "cache_control": {"type": "ephemeral"}}
+            ]
+        ),
+        HumanMessage(content=prompt),
+    ]
     response = await invoke_with_budget_guard(_MODEL, messages, model_name="claude-sonnet-4-6")
     formatted = _extract_text(response.content).strip()
 

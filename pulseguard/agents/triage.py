@@ -112,7 +112,14 @@ async def classify_issue_type(state: TriageState) -> dict[str, Any]:
     carrier = vs_data.get("detected_carrier", "unknown")
 
     prompt = f"Carrier: {carrier}\nSource: {source}\n<customer_post>\n{content}\n</customer_post>"
-    messages = [SystemMessage(content=_TRIAGE_SYSTEM), HumanMessage(content=prompt)]
+    messages = [
+        SystemMessage(
+            content=[
+                {"type": "text", "text": _TRIAGE_SYSTEM, "cache_control": {"type": "ephemeral"}}
+            ]
+        ),
+        HumanMessage(content=prompt),
+    ]
 
     try:
         response = await invoke_with_budget_guard(_MODEL, messages, model_name="claude-sonnet-4-6")

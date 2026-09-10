@@ -17,9 +17,12 @@ async def invoke_with_budget_guard(
     await check_budget()
     response = await model.ainvoke(messages)
     usage = getattr(response, "usage_metadata", None) or {}
+    details = usage.get("input_token_details", {}) or {}
     await record_spend(
         model_name,
         input_tokens=usage.get("input_tokens", 0),
         output_tokens=usage.get("output_tokens", 0),
+        cache_creation_tokens=details.get("cache_creation", 0),
+        cache_read_tokens=details.get("cache_read", 0),
     )
     return response

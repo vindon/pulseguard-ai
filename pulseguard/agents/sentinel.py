@@ -119,7 +119,11 @@ async def classify_validity(state: SentinelState) -> dict[str, Any]:
     source = state["raw_signal"].get("source", "")
 
     messages = [
-        SystemMessage(content=_VALIDITY_SYSTEM),
+        SystemMessage(
+            content=[
+                {"type": "text", "text": _VALIDITY_SYSTEM, "cache_control": {"type": "ephemeral"}}
+            ]
+        ),
         HumanMessage(content=f"Source: {source}\n<customer_post>\n{content}\n</customer_post>"),
     ]
     response = await invoke_with_budget_guard(_MODEL, messages, model_name="claude-haiku-4-5")

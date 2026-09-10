@@ -69,14 +69,31 @@ async def check_budget() -> None:
             )
 
 
-async def record_spend(model: str, input_tokens: int, output_tokens: int) -> float:
+async def record_spend(
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    cache_creation_tokens: int = 0,
+    cache_read_tokens: int = 0,
+) -> float:
     pricing = settings.model_pricing_map
     if model not in pricing:
         logger.warning("budget_guard_unknown_model_pricing", model=model)
         return 0.0
 
     input_rate, output_rate = pricing[model]
-    cost = (input_tokens / 1_000_000) * input_rate + (output_tokens / 1_000_000) * output_rate
+    # Anthropic prompt caching: a cache write costs a 25% premium over base
+    # input pricing (paid once, when the prefix is first cached); a cache
+    # read costs 90% less than base input pricing (paid on every subsequent
+    # call that hits the cached prefix). These are Anthropic's own standard
+    # multipliers, not a PulseGuard-chosen approximation — confirm they
+    # still match Anthropic's current published pricing at deploy time.
+    cost = (
+        (input_tokens / 1_000_000) * input_rate
+        + (output_tokens / 1_000_000) * output_rate
+        + (cache_creation_tokens / 1_000_000) * input_rate * 1.25
+        + (cache_read_tokens / 1_000_000) * input_rate * 0.1
+    )
 
     redis = get_async_redis()
     daily_key = _daily_key()
@@ -91,6 +108,8 @@ async def record_spend(model: str, input_tokens: int, output_tokens: int) -> flo
         model=model,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
+        cache_creation_tokens=cache_creation_tokens,
+        cache_read_tokens=cache_read_tokens,
         cost_usd=round(cost, 6),
         recorded_at=datetime.now(UTC).isoformat(),
     )
