@@ -61,7 +61,7 @@ export default function StatusPanel({
         <StatCard
           label="Adapters reporting"
           value={adapterEntries.length || '—'}
-          sub="of 6 configured"
+          sub="feeds configured"
           icon={<Radio className="h-3 w-3" />}
           iconTone="success"
         />
