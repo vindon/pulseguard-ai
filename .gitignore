@@ -21,3 +21,7 @@ chroma_db/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+
+# Superpowers scratch workspace (SDD ledgers, brainstorm mockups) — local
+# working state, not project source
+.superpowers/
