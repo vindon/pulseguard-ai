@@ -6,18 +6,19 @@ It monitors public social feeds, classifies issues, and routes them for resoluti
 It is NOT a call transcript system. It is NOT related to call anatomy frameworks.
 
 ## Non-negotiables
-- Author handles are ALWAYS hashed (SHA-256) before storage. No exceptions.
-- Content is ALWAYS PII-sanitised before storage. No exceptions.
+- Author handles are ALWAYS hashed (SHA-256) before storage. No exceptions. **Why:** this system stores content from public social accounts at scale — hashing handles keeps the store from becoming a de-anonymizable dataset of who-said-what, which is both a privacy exposure and a platform-ToS risk if the store ever leaked or was queried in bulk.
+- Content is ALWAYS PII-sanitised before storage. No exceptions. **Why:** same exposure as above, applied to message bodies rather than authorship — a triage/resolution system shouldn't become a PII honeypot just because the source posts are public.
 - RESOLVER never posts publicly. It produces drafts only. Publishing happens
   ONLY via explicit human approval through the `/drafts/{id}/approve`
   endpoint — never automatically, never by any agent acting on its own.
   ("RESOLVER never posts" describes the agent, not the system: the system
   does post, but only after that explicit human action. Treating the
   Approve & Send feature as a violation of this rule is a misreading of it.)
+  **Why:** an LLM auto-posting customer-facing replies at telecom scale is the single highest-blast-radius failure mode in this system — a bad draft is a review-queue item, a bad autonomous post is a public incident.
 - All secrets via environment variables. Never hardcode credentials.
 - Never commit .env. Never log API keys.
 - Run tests before marking any task done.
-- ARM64 compatible code only (MacBook M-series + Linux ARM).
+- ARM64 compatible code only (MacBook M-series + Linux ARM). **Why:** dev and target deploy are both ARM64 (M-series Mac, ARM Linux) — an x86-only dependency (no ARM wheel) breaks the deploy target, not just a "nice to have."
 - uv for dependency management. Not pip.
 
 ## Agent model assignments (do not change)
