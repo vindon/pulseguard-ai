@@ -25,3 +25,7 @@ chroma_db/
 # Superpowers scratch workspace (SDD ledgers, brainstorm mockups) — local
 # working state, not project source
 .superpowers/
+
+# Local Claude Code / worktree state
+.claude/
+.worktrees/
